@@ -16,7 +16,8 @@
 				"eamodio.gitlens",
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-themes",
-				"ms-vscode.hexeditor"
+				"ms-vscode.hexeditor",
+				"GitHub.copilot-labs"
 			]
 		}
 	}
