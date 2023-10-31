@@ -37,7 +37,7 @@ int roman_to_arabic(char *roman) {
         } else {
             result += convRom(roman[i]);
         }
-        prev = roman[i];
+        prev = convRom(roman[i]);
     }
     return result;
 }
@@ -47,14 +47,24 @@ void print_arabic_as_roman(int num) {
     const char *roman[] = {"M",  "CM", "D",  "CD", "C",  "XC", "L",
                            "XL", "X",  "IX", "V",  "IV", "I"};
     int i = 0;
+    int j = 0;
+    int k = 0;
+    char tmp_roman[100];
     while (num > 0) {
         if (num >= arabic[i]) {
-            printf("%s", roman[i]);
+            j = 0;
+            while (roman[i][j] != '\0') {
+                tmp_roman[k + j] = roman[i][j];
+                j++;
+            }
+            k += j;
             num -= arabic[i];
         } else {
             i++;
         }
     }
+    tmp_roman[k] = '\0';
+    printf("%s", tmp_roman);
 }
 
 int calc(int a, int b, char op) {
@@ -72,34 +82,28 @@ int calc(int a, int b, char op) {
             return a / b;
             break;
     }
-    return 0;
+    return -1;
 }
 
 int main() {
-    char roman[100];
+    char roman1[100];
+    char roman2[100];
+
     char op;
     int result, a, b;
-    int next = 1;
 
-    while (next) {
-        scanf("%s", roman);
-        a = roman_to_arabic(roman);
-        scanf(" %c", &op);
-        scanf("%s", roman);
-        b = roman_to_arabic(roman);
+    while (scanf("%s %c %s", roman1, &op, roman2) == 3) {
+        a = roman_to_arabic(roman1);
+        b = roman_to_arabic(roman2);
 
         result = calc(a, b, op);
 
-        if (result <= 0 || result >= 3999) {
+        if (result <= 0 || result > 3999) {
             printf("-");
         } else {
             print_arabic_as_roman(result);
         }
         printf("\n");
-
-        if (fgetc(stdin) == EOF) {
-            next = 0;
-        }
     }
 
     return 0;
