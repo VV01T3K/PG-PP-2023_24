@@ -25,21 +25,19 @@ int convRom(char roman) {
             return 1000;
             break;
     }
-    return -1;
+    return 0;
 }
 
 int roman_to_arabic(char *roman) {
-    int flag = 1;
     int result = 0;
+    int prev = 0;
     for (int i = strlen(roman) - 1; i >= 0; i--) {
-        if (flag) {
-            result += convRom(roman[i]);
-        } else {
+        if (convRom(roman[i]) < prev) {
             result -= convRom(roman[i]);
+        } else {
+            result += convRom(roman[i]);
         }
-        if (convRom(roman[i]) > convRom(roman[i - 1])) {
-            flag = 0;
-        }
+        prev = roman[i];
     }
     return result;
 }
@@ -58,6 +56,7 @@ void print_arabic_as_roman(int num) {
         }
     }
 }
+
 int calc(int a, int b, char op) {
     switch (op) {
         case '+':
@@ -91,7 +90,7 @@ int main() {
 
         result = calc(a, b, op);
 
-        if (result < 0 || result > 3999) {
+        if (result <= 0 || result >= 3999) {
             printf("-");
         } else {
             print_arabic_as_roman(result);

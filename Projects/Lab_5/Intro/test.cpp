@@ -1,26 +1,36 @@
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <string.h>
 
-/* function to generate and return random numbers */
-int *getRandom() {
-    int r[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
+int romanToInt(char *s) {
+    int values[26] = {0};
+    values['I' - 'A'] = 1;
+    values['V' - 'A'] = 5;
+    values['X' - 'A'] = 10;
+    values['L' - 'A'] = 50;
+    values['C' - 'A'] = 100;
+    values['D' - 'A'] = 500;
+    values['M' - 'A'] = 1000;
 
-    return r;
-}
+    int total = 0;
+    int prev = 0;
+    int len = strlen(s);
 
-/* main function to call above defined function */
-int main() {
-    /* a pointer to an int */
-    int *p;
-    int i;
-
-    p = getRandom();
-
-    for (i = 0; i < 10; i++) {
-        printf("*(p + %d) : %d\n", i, *(p + i));
+    for (int i = len - 1; i >= 0; i--) {
+        int curr = values[s[i] - 'A'];
+        if (curr < prev) {
+            total -= curr;
+        } else {
+            total += curr;
+        }
+        prev = curr;
     }
 
+    return total;
+}
+
+int main() {
+    char roman[] = "MMDCCXXXIX";
+    int arabic = romanToInt(roman);
+    printf("%s = %d\n", roman, arabic);
     return 0;
 }
