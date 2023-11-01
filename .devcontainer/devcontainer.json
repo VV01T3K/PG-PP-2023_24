@@ -17,7 +17,9 @@
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-themes",
 				"ms-vscode.hexeditor",
-				"GitHub.copilot-labs"
+				"GitHub.copilot-labs",
+				"alefragnani.Bookmarks",
+				"wayou.vscode-todo-highlight"
 			]
 		}
 	}

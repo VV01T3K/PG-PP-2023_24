@@ -1,36 +1,38 @@
 #include <stdio.h>
 #include <string.h>
 
-int romanToInt(char *s) {
-    int values[26] = {0};
-    values['I' - 'A'] = 1;
-    values['V' - 'A'] = 5;
-    values['X' - 'A'] = 10;
-    values['L' - 'A'] = 50;
-    values['C' - 'A'] = 100;
-    values['D' - 'A'] = 500;
-    values['M' - 'A'] = 1000;
-
-    int total = 0;
-    int prev = 0;
-    int len = strlen(s);
-
-    for (int i = len - 1; i >= 0; i--) {
-        int curr = values[s[i] - 'A'];
-        if (curr < prev) {
-            total -= curr;
-        } else {
-            total += curr;
-        }
-        prev = curr;
-    }
-
-    return total;
-}
+#define listS 500
+#define wordS 1000
 
 int main() {
-    char roman[] = "MMDCCXXXIX";
-    int arabic = romanToInt(roman);
-    printf("%s = %d\n", roman, arabic);
+    char c;
+    char word_list[listS][wordS] = {};
+    char exist_list[listS] = {0};
+    int list_len = 0;
+    char array[200][200] = {0};
+    int row = 0, col, k;
+    char word[wordS] = {0};
+    // pobranie listy słów
+    do {
+        scanf("%s%c", word_list[list_len], &c);
+        list_len++;
+    } while (c != '\n');
+
+    // TODO - dodać opcje różno wielkościowych arrayów
+    // pobranie arraya liter
+    // for (row = 0, col = 0; row < rowS;
+    //      col++, (col == colS) ? col = 0, row++ : 0) {
+    //     scanf("%c", &c);
+    //     if (c == '\n') scanf("%c", &c);
+    //     array[row][col] = c;
+    // }
+    int rowS = 0, colS = 0;
+
+    while (scanf("%s", word) == 1) {
+        rowS++;
+    }
+    colS = strlen(word);
+
+    printf("%d %d\n", rowS, colS);
     return 0;
 }
