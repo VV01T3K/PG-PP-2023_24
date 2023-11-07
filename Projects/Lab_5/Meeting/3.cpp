@@ -11,6 +11,7 @@ void swap(int* x, int* y) {
     *y = tmp;
 }
 // c++ --------------
+// int& alias
 // void swap(int& x, int& y) {
 //     int tmp = x;
 //     x = y;
