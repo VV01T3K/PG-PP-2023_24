@@ -5,16 +5,18 @@
 //     x = y;
 //     y = tmp;
 // }
-// void swap(int& x, int& y) {
-//     int tmp = x;
-//     x = y;
-//     y = tmp;
-// }
 void swap(int* x, int* y) {
     int tmp = *x;
     *x = *y;
     *y = tmp;
 }
+// c++ --------------
+// void swap(int& x, int& y) {
+//     int tmp = x;
+//     x = y;
+//     y = tmp;
+// }
+// c++ --------------
 
 int main() {
     int a = 3, b = 2;
