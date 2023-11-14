@@ -18,14 +18,14 @@ void sort(int* tablica, int n) {
 }
 
 int main() {
-    int n, k, i;
+    unsigned int n, k, i;
     scanf("%d %d", &n, &k);
 
     int* tablica = (int*)malloc(n * sizeof(int));
 
     for (i = 0; i < n; i++) {
         scanf("%d", &tablica[i]);
-        tablica[i] = (short)tablica[i] % k;
+        tablica[i] = tablica[i] % k;
     }
 
     sort(tablica, n);
@@ -33,8 +33,6 @@ int main() {
     for (i = 0; i < n; i++) {
         printf("%d ", tablica[i]);
     }
-
-    free(tablica);
 
     return 0;
 }
