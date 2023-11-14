@@ -18,10 +18,10 @@ void sort(int* tablica, int n) {
 }
 
 int main() {
-    unsigned int n, k, i;
+    int n, k, i;
     scanf("%d %d", &n, &k);
 
-    int* tablica = (int*)malloc(n * sizeof(int));
+    int tablica[1001] = {0};
 
     for (i = 0; i < n; i++) {
         scanf("%d", &tablica[i]);
