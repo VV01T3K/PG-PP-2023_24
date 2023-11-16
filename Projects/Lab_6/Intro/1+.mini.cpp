@@ -22,41 +22,34 @@ int t(char *r) {
     }
     return y;
 }
-void pr(int num) {
+void pr(int g) {
     int a[] = {1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1};
     const char *r[] = {"M",  "CM", "D",  "CD", "C",  "XC", "L",
                        "XL", "X",  "IX", "V",  "IV", "I"};
     int i = 0, j = 0, k = 0;
-    char tmp_r[100];
-    while (num > 0) {
-        if (num >= a[i]) {
+    char z[100];
+    while (g > 0) {
+        if (g >= a[i]) {
             j = 0;
             while (r[i][j] != '\0') {
-                tmp_r[k + j] = r[i][j];
+                z[k + j] = r[i][j];
                 j++;
             }
             k += j;
-            num -= a[i];
+            g -= a[i];
         } else {
             i++;
         }
     }
-    tmp_r[k] = '\0';
-    printf("%s", tmp_r);
+    z[k] = '\0';
+    printf("%s", z);
 }
 int calc(int a, int b, char op) {
-    switch (op) {
-        case '+':
-            return a + b;
-        case '-':
-            return a - b;
-        case '*':
-            return a * b;
-        case '/':
-            return a / b;
-        default:
-            return -1;
-    }
+    return op == '+'   ? a + b
+           : op == '-' ? a - b
+           : op == '*' ? a * b
+           : op == '/' ? a / b
+                       : -1;
 }
 int main() {
     char r1[100];
