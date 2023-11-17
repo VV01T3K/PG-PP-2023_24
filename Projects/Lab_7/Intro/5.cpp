@@ -7,7 +7,10 @@
 
 void readLine(char *str) {
     fgets(str, MAX, stdin);
-    str[strlen(str) - 1] = '\0';
+    int len = strlen(str);
+    if (len > 0 && str[len - 1] == '\n') {
+        str[len - 1] = '\0';
+    }
 }
 int calcSide(char *str);
 void spiltSides(char *str, char *left, char *right);
@@ -24,14 +27,22 @@ void printResult(char *str, int len) {
 int main() {
     int T;
     scanf("%d", &T);
+    getchar();
 
-    for (int t = 0; t < T + 1; t++) {
-        char str[MAX];
+    for (int t = 0; t < T; t++) {
+        char str[MAX] = "";
+        char signs[MAX] = "";
+        char signed_str[MAX] = "";
         readLine(str);
 
-        char signs[MAX];
-
         int space = countSpaces(str);
+
+        if (space == 1) {
+            if (str[0] == str[2]) {
+                printf("%c=%c\n", str[0], str[2]);
+            }
+            continue;
+        }
 
         for (int i = 0; i < space; i++) {
             for (int j = 0; j < space; j++) {
@@ -41,7 +52,6 @@ int main() {
                     signs[j] = '+';
                 }
             }
-            char signed_str[MAX];
             placeSigns(str, signs, signed_str);
 
             if (compareSides(signed_str)) {
@@ -51,7 +61,6 @@ int main() {
             for (int j = 0; j < space; j++) {
                 if (j != i) {
                     signs[j] = '-';
-                    char signed_str[MAX];
                     placeSigns(str, signs, signed_str);
 
                     if (compareSides(signed_str)) {
