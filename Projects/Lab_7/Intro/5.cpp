@@ -14,12 +14,18 @@ void spiltSides(char *str, char *left, char *right);
 int compareSides(char *str);
 void placeSigns(char *str, char *signs, char *signed_str);
 int countSpaces(char *str);
+void printResult(char *str, int len) {
+    for (int i = 0; i < len; i++) {
+        printf("%c", str[i]);
+    }
+    printf("\n");
+}
 
 int main() {
     int T;
     scanf("%d", &T);
 
-    for (int t = 0; t < T; t++) {
+    for (int t = 0; t < T + 1; t++) {
         char str[MAX];
         readLine(str);
 
@@ -39,7 +45,7 @@ int main() {
             placeSigns(str, signs, signed_str);
 
             if (compareSides(signed_str)) {
-                printf("%s\n", signed_str);
+                printResult(signed_str, strlen(str));
             }
 
             for (int j = 0; j < space; j++) {
@@ -49,7 +55,7 @@ int main() {
                     placeSigns(str, signs, signed_str);
 
                     if (compareSides(signed_str)) {
-                        printf("%s\n", signed_str);
+                        printResult(signed_str, strlen(str));
                     }
                     signs[j] = '+';
                 }
