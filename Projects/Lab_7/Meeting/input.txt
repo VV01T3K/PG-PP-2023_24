@@ -1,0 +1,6 @@
+anna 50
+karol 30
+jan 20
+anna 15
+michal 15
+iza 17
