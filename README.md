@@ -3,4 +3,9 @@
 https://www.asciitable.com/
 
 
-gcc -o script Project/index.c $(ncursesw6-config --cflags --libs) && ./script
+apk search ncurses
+apk search ncurses | grep 'dev'
+apk search ncurses | grep -- '-dev'
+apk info -qL ncurses-dev
+
+gcc -o .game index.c fun.c $(ncursesw6-config --cflags --libs) && ./.game
