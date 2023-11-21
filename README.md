@@ -3,4 +3,4 @@
 https://www.asciitable.com/
 
 
-g++ -o script 1.cpp && ./script < input.txt
+gcc -o script Project/index.c && ./script

@@ -3,8 +3,6 @@
 
 int main() {
     // code
-    // last in first out
-    // first in last out
-
+    printf("Hello World!\n");
     return 0;
 }
