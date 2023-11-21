@@ -9,6 +9,10 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "cmath": "cpp",
-        "second.h": "c"
+        "second.h": "c",
+        "random": "c",
+        "ncurses.h": "c",
+        "define.h": "c",
+        "locale.h": "c"
     }
 }

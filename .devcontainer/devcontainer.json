@@ -19,7 +19,8 @@
 				"ms-vscode.hexeditor",
 				"GitHub.copilot-labs",
 				"alefragnani.Bookmarks",
-				"wayou.vscode-todo-highlight"
+				"wayou.vscode-todo-highlight",
+				"adpyke.codesnap"
 			]
 		}
 	}
