@@ -1,9 +1,8 @@
-#include "fun.h"
-
 #include <locale.h>
 #include <ncurses.h>
 
 #include "define.h"
+#include "headers.h"
 
 void colorInit() {
     init_pair(1, COLOR_BLUE, COLOR_YELLOW);

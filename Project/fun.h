@@ -1,2 +1,0 @@
-void colorInit();
-char init();

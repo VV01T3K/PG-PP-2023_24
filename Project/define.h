@@ -4,6 +4,12 @@
 #define FALSE 0
 #define MAX_HALL_OF_FAME 10
 #define MAX_NAME 20
+#define MAX_BAR 6
+
+#define BOARD_WIDTH 47
+#define BOARD_HEIGHT 13
+#define BOARD_PIONKI_HEIGHT 5
+#define BOARD_PADDING 2
 
 // Znaki
 // #define BLOCK "\u25A7"
