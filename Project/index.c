@@ -3,15 +3,24 @@
 #include "define.h"
 #include "headers.h"
 
+void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
+    box(window, 0, 0);
+    mvwprintw(window, 0, 1, "cos");
+    wrefresh(window);
+}
+void paint_UI(WINDOW* window, struct GAME_T* GAME) {
+    box(window, 0, 0);
+    mvwprintw(window, getmaxy(window) - 1, 1, "UI");
+    mvwprintw(window, getmaxy(window) / 2, 2, "komendy");
+    wrefresh(window);
+}
+
 void run(struct GAME_T* GAME) {
-    WINDOW* BOARD = newwin(BOARD_HEIGHT + (BOARD_PADDING * 2),
-                           BOARD_WIDTH + (BOARD_PADDING * 3), 1, 4);
+    printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
 
-    paint_BOARD(GAME, BOARD, BOARD_PADDING);
-    refresh();
-
-    paint_BOARD(GAME, BOARD, BOARD_PADDING);
-    refresh();
+    paint_MENU(GAME->menu.window, GAME);
+    paint_UI(GAME->ui.window, GAME);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 
 void placePionki(struct GAME_T* GAME) {
@@ -50,9 +59,10 @@ void initGame(struct GAME_T* GAME) {
 }
 
 int main() {
-    if (init()) {
+    if (initialInit()) {
         struct GAME_T* GAME = (struct GAME_T*)malloc(sizeof(struct GAME_T));
         if (GAME == NULL) return 1;
+        initWindows(GAME);
         initGame(GAME);
         run(GAME);
     }

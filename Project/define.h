@@ -6,10 +6,13 @@
 #define MAX_NAME 20
 #define MAX_BAR 6
 
+#define BOARD_PADDING 2
 #define BOARD_WIDTH 47
+#define PADDED_BOARD_WIDTH (BOARD_WIDTH + (BOARD_PADDING * 3))
+#define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
+
 #define BOARD_HEIGHT 13
 #define BOARD_PIONKI_HEIGHT 5
-#define BOARD_PADDING 2
 
 // Znaki
 // #define BLOCK "\u25A7"
@@ -58,6 +61,7 @@ struct DWOR_T {
     int gracz_B;  // 0 - brak, 1-15 - ilość pionków
 };
 struct PLANSZA_T {
+    WINDOW* window;
     struct POLE_T pole[25];
     struct BAR_T bar;
     struct DWOR_T dwor;
@@ -70,9 +74,18 @@ struct GRACZ_T {
 struct HALL_OF_FAME_T {
     struct GRACZ_T gracz[MAX_HALL_OF_FAME];
 };
+struct MENU_T {
+    WINDOW* window;
+};
+struct UI_T {
+    WINDOW* window;
+};
+
 struct GAME_T {
     struct PLANSZA_T plansza;
     struct GRACZ_T gracz_A;
     struct GRACZ_T gracz_B;
     struct HALL_OF_FAME_T hall_of_fame;
+    struct MENU_T menu;
+    struct UI_T ui;
 };

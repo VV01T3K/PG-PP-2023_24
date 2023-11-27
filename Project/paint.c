@@ -3,8 +3,7 @@
 #include "define.h"
 #include "headers.h"
 
-void paint_BOARD(struct GAME_T* GAME, WINDOW* window, int pad) {
-    refresh();
+void paint_BOARD(WINDOW* window, struct GAME_T* GAME, int pad) {
     box(window, 0, 0);
     int i, mv;
     for (i = 0, mv = 0; i < 12; i++) {
@@ -32,7 +31,7 @@ void paint_POLE_TOP(int x, int pad, int kolor, WINDOW* window,
         if (tmp-- > 0) {
             printw_color(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
         } else {
-            printw_color(kolor, mvwprintw(window, y + i, x, "%s", POLE_UP));
+            printw_color(kolor, mvwprintw(window, y + i, x, "%s", POLE_DOWN));
         }
     }
     if (tmp > 0) mvwprintw(window, y + i, x - 1, "+%d", tmp);

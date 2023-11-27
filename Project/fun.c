@@ -18,7 +18,20 @@ void colorInit() {
     init_pair(9, COLOR_CYAN, COLOR_BLACK);
 }
 
-char init() {
+void initWindows(struct GAME_T* GAME) {
+    GAME->plansza.window =
+        newwin(PADDED_BOARD_HEIGHT, PADDED_BOARD_WIDTH, 2, 4);
+
+    GAME->menu.window =
+        newwin(PADDED_BOARD_HEIGHT * 1.3 - 1, PADDED_BOARD_WIDTH / 2, 2,
+               PADDED_BOARD_WIDTH + 4);
+
+    GAME->ui.window = newwin(PADDED_BOARD_HEIGHT / 3, PADDED_BOARD_WIDTH,
+                             PADDED_BOARD_HEIGHT + 1, 4);
+    refresh();
+}
+
+char initialInit() {
     setlocale(LC_ALL, "");
     initscr();
     if (has_colors() == TRUE) {
