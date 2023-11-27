@@ -22,12 +22,15 @@ void initWindows(struct GAME_T* GAME) {
     GAME->plansza.window =
         newwin(PADDED_BOARD_HEIGHT, PADDED_BOARD_WIDTH, 2, 4);
 
-    GAME->menu.window =
-        newwin(PADDED_BOARD_HEIGHT * 1.3 - 1, PADDED_BOARD_WIDTH / 2, 2,
-               PADDED_BOARD_WIDTH + 4);
+    GAME->menu.window = newwin(PADDED_BOARD_HEIGHT, PADDED_BOARD_WIDTH / 2, 2,
+                               PADDED_BOARD_WIDTH + 4);
 
-    GAME->ui.window = newwin(PADDED_BOARD_HEIGHT / 3, PADDED_BOARD_WIDTH,
-                             PADDED_BOARD_HEIGHT + 1, 4);
+    GAME->ui_1.window = newwin(PADDED_BOARD_HEIGHT / 3 + 1, PADDED_BOARD_WIDTH,
+                               PADDED_BOARD_HEIGHT + 1, 4);
+
+    GAME->ui_2.window =
+        newwin(PADDED_BOARD_HEIGHT / 3 + 1, PADDED_BOARD_WIDTH / 2,
+               PADDED_BOARD_HEIGHT + 1, PADDED_BOARD_WIDTH + 4);
     refresh();
 }
 

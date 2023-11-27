@@ -40,10 +40,14 @@
 
 // Funkcje
 #define CLR(x) COLOR_PAIR(x)
-#define printw_color(clr, _print)     \
+#define atrrCLR(clr, _print)          \
     wattron(window, COLOR_PAIR(clr)); \
     _print;                           \
     wattroff(window, COLOR_PAIR(clr));
+#define atrr(other, _print) \
+    wattron(window, other); \
+    _print;                 \
+    wattroff(window, other);
 
 // Struktury
 struct POLE_T {
@@ -87,5 +91,6 @@ struct GAME_T {
     struct GRACZ_T gracz_B;
     struct HALL_OF_FAME_T hall_of_fame;
     struct MENU_T menu;
-    struct UI_T ui;
+    struct UI_T ui_1;
+    struct UI_T ui_2;
 };

@@ -18,7 +18,7 @@ void paint_BOARD(WINDOW* window, struct GAME_T* GAME, int pad) {
     }
     paint_DWOR(3 * i + (pad * 2) + mv, pad, window, GAME->plansza.dwor);
 
-    mvwprintw(window, 0, 1, "Backgammon-1.0");
+    atrr(A_BOLD, mvwprintw(window, 0, 1, "Backgammon─1.0"));
     wrefresh(window);
 }
 
@@ -29,9 +29,9 @@ void paint_POLE_TOP(int x, int pad, int kolor, WINDOW* window,
     mvwprintw(window, y - 1, x - (pole.number > 9 ? 1 : 0), "%d", pole.number);
     for (i = 0; i < 5; i++) {
         if (tmp-- > 0) {
-            printw_color(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
+            atrrCLR(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
         } else {
-            printw_color(kolor, mvwprintw(window, y + i, x, "%s", POLE_DOWN));
+            atrrCLR(kolor, mvwprintw(window, y + i, x, "%s", POLE_DOWN));
         }
     }
     if (tmp > 0) mvwprintw(window, y + i, x - 1, "+%d", tmp);
@@ -43,9 +43,9 @@ void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window,
     mvwprintw(window, y + 5, x - 1, "%d", pole.number);
     for (i = 4; i >= 0; i--) {
         if (tmp-- > 0) {
-            printw_color(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
+            atrrCLR(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
         } else {
-            printw_color(kolor, mvwprintw(window, y + i, x, "%s", POLE_UP));
+            atrrCLR(kolor, mvwprintw(window, y + i, x, "%s", POLE_UP));
         }
     }
     if (tmp > 0) mvwprintw(window, y - 1, x - 1, "+%d", tmp);
@@ -58,8 +58,8 @@ void paint_BAR_A(int x, int y, WINDOW* window, struct BAR_T bar) {
                       bar.gracz_A - i);
             break;
         }
-        printw_color(MAGENTA, mvwprintw(window, y + BOARD_PIONKI_HEIGHT - i,
-                                        x + 1, "%s", PIONEK));
+        atrrCLR(MAGENTA, mvwprintw(window, y + BOARD_PIONKI_HEIGHT - i, x + 1,
+                                   "%s", PIONEK));
     }
 }
 void paint_BAR_B(int x, int y, WINDOW* window, struct BAR_T bar) {
@@ -70,10 +70,9 @@ void paint_BAR_B(int x, int y, WINDOW* window, struct BAR_T bar) {
                       "+%d", bar.gracz_B - i);
             break;
         }
-        printw_color(
-            CYAN,
-            mvwprintw(window, y + BOARD_HEIGHT - BOARD_PIONKI_HEIGHT - 1 + i,
-                      x + 1, "%s", PIONEK));
+        atrrCLR(CYAN, mvwprintw(window,
+                                y + BOARD_HEIGHT - BOARD_PIONKI_HEIGHT - 1 + i,
+                                x + 1, "%s", PIONEK));
     }
 }
 void paint_BAR(int x, int y, WINDOW* window, struct BAR_T bar) {
@@ -90,11 +89,10 @@ void paint_DWOR(int x, int y, WINDOW* window, struct DWOR_T dwor) {
         mvwprintw(window, y + i, x, "%s   %s", LINE, LINE);
     }
     for (i = 0, j = 0; i < dwor.gracz_A; i++, i % 3 == 0 ? j++ : j) {
-        printw_color(CYAN,
-                     mvwprintw(window, y + j, x + i % 3 + 1, "%s", PIONEK));
+        atrrCLR(CYAN, mvwprintw(window, y + j, x + i % 3 + 1, "%s", PIONEK));
     }
     for (i = 0, j = 0; i < dwor.gracz_B; i++, i % 3 == 0 ? j++ : j) {
-        printw_color(MAGENTA, mvwprintw(window, y + BOARD_HEIGHT - j - 1,
-                                        x + i % 3 + 1, "%s", PIONEK));
+        atrrCLR(MAGENTA, mvwprintw(window, y + BOARD_HEIGHT - j - 1,
+                                   x + i % 3 + 1, "%s", PIONEK));
     }
 }
