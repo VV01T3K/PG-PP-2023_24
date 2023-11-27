@@ -37,6 +37,10 @@
 
 // Funkcje
 #define CLR(x) COLOR_PAIR(x)
+#define printw_color(clr, _print)     \
+    wattron(window, COLOR_PAIR(clr)); \
+    _print;                           \
+    wattroff(window, COLOR_PAIR(clr));
 
 // Struktury
 struct POLE_T {

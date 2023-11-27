@@ -18,3 +18,4 @@ sudo update-locale LANG=en_US.UTF-8 LANGUAGE=en.UTF-8
 
 
 - [+] paint_BAR too long ??
+- [] paint_DWOR too long ??
