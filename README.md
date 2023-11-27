@@ -5,7 +5,7 @@ https://www.asciitable.com/
 https://www.w3.org/TR/xml-entity-names/025.html
 
 apk search ncurses
-apk search ncurses | grep 'dev'
+apk search ncurses | grep 'dev' 
 apk search ncurses | grep -- '-dev'
 apk info -qL ncurses-dev
 
