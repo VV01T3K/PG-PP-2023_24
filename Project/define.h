@@ -76,10 +76,8 @@ struct GRACZ_T {
     int wynik;
 };
 struct HALL_OF_FAME_T {
-    struct GRACZ_T gracz[MAX_HALL_OF_FAME];
-};
-struct MENU_T {
     WINDOW* window;
+    struct GRACZ_T gracz[MAX_HALL_OF_FAME];
 };
 struct UI_T {
     WINDOW* window;
@@ -90,7 +88,8 @@ struct GAME_T {
     struct GRACZ_T gracz_A;
     struct GRACZ_T gracz_B;
     struct HALL_OF_FAME_T hall_of_fame;
-    struct MENU_T menu;
-    struct UI_T ui_1;
+    struct UI_T state;
+    struct UI_T controls;
     struct UI_T ui_2;
+    struct UI_T menu;
 };

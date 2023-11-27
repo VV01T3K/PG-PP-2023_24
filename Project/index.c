@@ -3,16 +3,16 @@
 #include "define.h"
 #include "headers.h"
 
-void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
+void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
-    mvwprintw(window, 0, 1, "cos");
+    mvwprintw(window, 0, 1, "State");
     wrefresh(window);
 }
-void paint_UI_1(WINDOW* window, struct GAME_T* GAME) {
+void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
     mvwprintw(window, 1, 2, "Gracz A");
     mvwprintw(window, 2, 2, "Ruch:");
-    mvwprintw(window, getmaxy(window) - 1, 1, "UI");
+    mvwprintw(window, getmaxy(window) - 1, 1, "Controls");
     mvwprintw(window, getmaxy(window) / 2, 4, "........................");
     wrefresh(window);
 }
@@ -21,14 +21,21 @@ void paint_UI_2(WINDOW* window, struct GAME_T* GAME) {
     mvwprintw(window, getmaxy(window) - 1, 1, "Kostki");
     wrefresh(window);
 }
+void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
+    box(window, 0, 0);
+    atrr(A_BOLD, mvwprintw(window, 0, 1, "Menu"););
+    wrefresh(window);
+}
 
 void run(struct GAME_T* GAME) {
     printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
 
-    paint_UI_1(GAME->ui_1.window, GAME);
     paint_UI_2(GAME->ui_2.window, GAME);
-    paint_MENU(GAME->menu.window, GAME);
+    paint_STATE(GAME->state.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    paint_CONTROLS(GAME->controls.window, GAME);
+    paint_MENU(GAME->menu.window, GAME);
+    paint_STATE(GAME->hall_of_fame.window, GAME);
 }
 
 void placePionki(struct GAME_T* GAME) {
