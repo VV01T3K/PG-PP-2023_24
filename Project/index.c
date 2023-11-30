@@ -37,34 +37,33 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
     wrefresh(window);
 }
 
-int input(WINDOW* window, int wrong) {
+int input(WINDOW* window) {
     w_mvwprintw(4, 3, "Choose from list: ");
-    wmove(window, 4, 3);
-    wclrtoeol(window);
-
-    wrefresh(window);
-    char in = wgetch(window);
-    switch (in) {
-        case '1':
-            w_wprintw("\bNew Game");
+    char in[10];
+    wgetnstr(window, in, 1);
+    clearLine(4);
+    switch (atoi(in)) {
+        case 1:
+            w_mvwprintw(4, 3, "Choose from list: New Game");
             break;
-        case '2':
-            w_wprintw("\bLoad Game");
+        case 2:
+            w_mvwprintw(4, 3, "Choose from list: Load Game");
             break;
-        case '3':
-            w_wprintw("\bReplay");
+        case 3:
+            w_mvwprintw(4, 3, "Choose from list: Replay");
             break;
-        case '4':
+        case 4:
             exit(0);
             break;
         default:
-            input(window, 1);
+            w_mvwprintw(4, 3, "Choose from list: Wrong input!");
+            input(window);
             break;
     }
     wrefresh(window);
 }
 void menu(WINDOW* window, struct GAME_T* GAME) {
-    int i = input(window, 0);
+    int i = input(window);
     // if (in == -1) return;
     // menu(window, GAME);
 }

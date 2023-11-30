@@ -54,12 +54,15 @@
     _print;                 \
     attroff(other);
 
-#define w_mvwprintw(y, x, str)    \
-    mvwprintw(window, y, x, str); \
-    wrefresh(window);
+#define w_mvwprintw(y, x, str) mvwprintw(window, y, x, str);
 
-#define w_wprintw(str)    \
-    wprintw(window, str); \
+#define w_wprintw(str) wprintw(window, str);
+
+#define clearLine(y)                          \
+    wmove(window, y, 0);                      \
+    wclrtoeol(window);                        \
+    w_mvwprintw(y, 0, "│");                   \
+    w_mvwprintw(y, getmaxx(window) - 1, "│"); \
     wrefresh(window);
 
 // Struktury
