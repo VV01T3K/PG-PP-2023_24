@@ -6,6 +6,7 @@
 #define MAX_NAME 20
 #define MAX_BAR 6
 #define POLE_COUNT 24
+#define MAX_INPUT_LENGTH 10
 
 #define PLAYER_A 1
 #define PLAYER_B 2
@@ -15,6 +16,10 @@
 #define BOARD_WIDTH 47
 #define PADDED_BOARD_WIDTH (BOARD_WIDTH + (BOARD_PADDING * 3))
 #define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
+
+#define controls_padd 15 + 2  // strlen("Ruch-Gracza X: ")
+#define menu_padd 18 + 3      // strlen("Choose from list: ")
+#define controls_promt "R(oll) | M(ove) | S(kip) | E(xit)"
 
 #define BOARD_HEIGHT 13
 
@@ -43,6 +48,12 @@
 #define COLOR_DARK_BLUE 81
 
 // Makra
+#define W_GETNSTR_IN(n, y, x)  \
+    char in[MAX_INPUT_LENGTH]; \
+    wmove(window, y, x);       \
+    wgetnstr(window, in, n);   \
+    wmove(window, y, x);
+
 #define CLR(x) COLOR_PAIR(x)
 
 #define atrrCLR(clr, _print)          \

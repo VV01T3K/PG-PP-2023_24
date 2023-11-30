@@ -79,10 +79,7 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
 }
 
 int decide_menu(WINDOW* window, struct GAME_T* GAME) {
-    char in[10], str[] = "Choose from list: ";
-    wmove(window, 4, 3 + strlen(str));
-    wgetnstr(window, in, 1);
-    wmove(window, 4, 3 + strlen(str));
+    W_GETNSTR_IN(1, 4, menu_padd);
     int result = atoi(in);
     switch (result) {
         case 1:
@@ -104,7 +101,7 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
             break;
     }
     clearLine(4);
-    wmove(window, 4, 3 + strlen(str));
+    wmove(window, 4, menu_padd);
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return decide_menu(window, GAME);
@@ -129,11 +126,8 @@ int roll(struct GAME_T* GAME) {
 }
 
 int decide_controls(WINDOW* window, struct GAME_T* GAME) {
-    w_mvwprintw(getmaxy(window) / 2, 4, "R(oll) | M(ove) | S(kip) | E(xit)");
-    char in[10], str[] = "Ruch-Gracza X: ";
-    wmove(window, 2, 2 + strlen(str));
-    wgetnstr(window, in, 1);
-    wmove(window, 2, 2 + strlen(str));
+    w_mvwprintw(getmaxy(window) / 2, 4, controls_promt);
+    W_GETNSTR_IN(1, 2, controls_padd);
     switch (tolower(in[0])) {
         case 'r':
             w_wprintw("Roll");
@@ -153,9 +147,6 @@ int decide_controls(WINDOW* window, struct GAME_T* GAME) {
             return decide_controls(window, GAME);
             break;
     }
-    clearLine(2);
-    wmove(window, 2, 2 + strlen(str));
-    wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return decide_controls(window, GAME);
     clearLine(2);
@@ -176,17 +167,14 @@ void comms(WINDOW* window, char* str, int kolor, int gracz) {
 }
 
 int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    char in[10], str[] = "Ruch-Gracza X: ";
-    wmove(window, 2, 2 + strlen(str));
-    wgetnstr(window, in, 2);
-    wmove(window, 2, 2 + strlen(str));
+    W_GETNSTR_IN(2, 2, controls_padd)
     int result = atoi(in);
     if (result < 1 || result > 24) {
         w_wprintw("Wrong input!");
         return get_number(window, GAME, gracz);
     }
     clearLine(2);
-    wmove(window, 2, 2 + strlen(str));
+    wmove(window, 2, controls_padd);
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return get_number(window, GAME, gracz);
