@@ -18,7 +18,7 @@ void paint_BOARD(WINDOW* window, struct GAME_T* GAME, int pad) {
     }
     paint_DWOR(3 * i + (pad * 2) + mv, pad, window, GAME->plansza.dwor);
 
-    atrr(A_BOLD, mvwprintw(window, 0, 1, "Backgammon─1.0"));
+    watrr(A_BOLD, mvwprintw(window, 0, 1, "Backgammon─1.0"));
     wrefresh(window);
 }
 

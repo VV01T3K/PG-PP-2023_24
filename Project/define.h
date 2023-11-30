@@ -39,16 +39,28 @@
 #define COLOR_BROWN 80
 #define COLOR_DARK_BLUE 81
 
-// Funkcje
+// Makra
 #define CLR(x) COLOR_PAIR(x)
 #define atrrCLR(clr, _print)          \
     wattron(window, COLOR_PAIR(clr)); \
     _print;                           \
     wattroff(window, COLOR_PAIR(clr));
-#define atrr(other, _print) \
-    wattron(window, other); \
-    _print;                 \
+#define watrr(other, _print) \
+    wattron(window, other);  \
+    _print;                  \
     wattroff(window, other);
+#define atrr(other, _print) \
+    attron(other);          \
+    _print;                 \
+    attroff(other);
+
+#define w_mvwprintw(y, x, str)    \
+    mvwprintw(window, y, x, str); \
+    wrefresh(window);
+
+#define w_wprintw(str)    \
+    wprintw(window, str); \
+    wrefresh(window);
 
 // Struktury
 struct POLE_T {

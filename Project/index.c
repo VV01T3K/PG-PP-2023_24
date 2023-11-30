@@ -1,41 +1,86 @@
 #include <ncurses.h>
+#include <stdlib.h>
 
 #include "define.h"
 #include "headers.h"
 
-void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
+void paint_HALL(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
-    mvwprintw(window, 0, 1, "State");
+    watrr(A_BOLD, w_mvwprintw(1, 7, "Hall of Fame"););
     wrefresh(window);
 }
 void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
-    mvwprintw(window, 1, 2, "Gracz A");
-    mvwprintw(window, 2, 2, "Ruch:");
-    mvwprintw(window, getmaxy(window) - 1, 1, "Controls");
-    mvwprintw(window, getmaxy(window) / 2, 4, "........................");
+    w_mvwprintw(1, 2, "Gracz A");
+    w_mvwprintw(2, 2, "Ruch:");
+    w_mvwprintw(getmaxy(window) - 1, 1, "Controls");
+    w_mvwprintw(getmaxy(window) / 2, 4, "........................");
     wrefresh(window);
 }
 void paint_UI_2(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
-    mvwprintw(window, getmaxy(window) - 1, 1, "Kostki");
+    w_mvwprintw(getmaxy(window) - 1, 1, "Kostki");
     wrefresh(window);
 }
 void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
-    atrr(A_BOLD, mvwprintw(window, 0, 1, "Menu"););
+    watrr(A_BOLD, w_mvwprintw(0, 1, "Menu"););
+
+    watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, "Backgammon─1.0"););
+
+    w_mvwprintw(6, 4, "1) New Game");
+    w_mvwprintw(7, 4, "2) Load Game");
+    w_mvwprintw(8, 4, "3) Replay");
+    w_mvwprintw(9, 4, "4) Exit");
+
+    // w_mvwprintw( 4, 3, "Choose from the list: ");
     wrefresh(window);
+}
+
+int input(WINDOW* window, int wrong) {
+    w_mvwprintw(4, 3, "Choose from list: ");
+    wmove(window, 4, 3);
+    wclrtoeol(window);
+
+    wrefresh(window);
+    char in = wgetch(window);
+    switch (in) {
+        case '1':
+            w_wprintw("\bNew Game");
+            break;
+        case '2':
+            w_wprintw("\bLoad Game");
+            break;
+        case '3':
+            w_wprintw("\bReplay");
+            break;
+        case '4':
+            exit(0);
+            break;
+        default:
+            input(window, 1);
+            break;
+    }
+    wrefresh(window);
+}
+void menu(WINDOW* window, struct GAME_T* GAME) {
+    int i = input(window, 0);
+    // if (in == -1) return;
+    // menu(window, GAME);
 }
 
 void run(struct GAME_T* GAME) {
     printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
-
-    paint_UI_2(GAME->ui_2.window, GAME);
-    paint_STATE(GAME->state.window, GAME);
-    paint_CONTROLS(GAME->controls.window, GAME);
+    // paint_UI_2(GAME->ui_2.window, GAME);
+    // paint_STATE(GAME->state.window, GAME);
+    // paint_CONTROLS(GAME->controls.window, GAME);
+    // paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    paint_HALL(GAME->hall_of_fame.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
-    paint_STATE(GAME->hall_of_fame.window, GAME);
-    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+
+    refresh();
+
+    menu(GAME->menu.window, GAME);
 }
 
 void placePionki(struct GAME_T* GAME) {
