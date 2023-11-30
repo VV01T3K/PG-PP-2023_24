@@ -1,9 +1,11 @@
+#include <ctype.h>
 #include <ncurses.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "define.h"
 #include "headers.h"
+
+void run(struct GAME_T* GAME);
 
 void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
@@ -19,11 +21,11 @@ void paint_HALL(WINDOW* window, struct GAME_T* GAME) {
     wrefresh(window);
 }
 
-void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME) {
+void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME, int gracz) {
     wclear(window);
     box(window, 0, 0);
     w_mvwprintw(getmaxy(window) - 1, 1, "Controls");
-    w_mvwprintw(getmaxy(window) / 2, 4, "R(oll) | M(ove) | S(kip) | E(nd)");
+
     wrefresh(window);
 }
 
@@ -65,6 +67,7 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
 
     watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, "Backgammon─1.0"););
 
+    w_mvwprintw(4, 3, "Choose from list: ");
     w_mvwprintw(5, 3, "( Enter x2 to confirm :v )");
 
     w_mvwprintw(8, 4, "1) New Game");
@@ -75,14 +78,13 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
     wrefresh(window);
 }
 
-int menu(WINDOW* window, struct GAME_T* GAME) {
-    char str[] = "Choose from list: ";
-    w_mvwprintw(4, 3, str);
-    char in[10];
+int decide_menu(WINDOW* window, struct GAME_T* GAME) {
+    char in[10], str[] = "Choose from list: ";
+    wmove(window, 4, 3 + strlen(str));
     wgetnstr(window, in, 1);
     wmove(window, 4, 3 + strlen(str));
-    int returner = atoi(in);
-    switch (returner) {
+    int result = atoi(in);
+    switch (result) {
         case 1:
             w_wprintw("New Game");
             break;
@@ -98,99 +100,183 @@ int menu(WINDOW* window, struct GAME_T* GAME) {
             break;
         default:
             w_wprintw("Wrong input!");
-            return menu(window, GAME);
+            return decide_menu(window, GAME);
             break;
     }
     clearLine(4);
     wmove(window, 4, 3 + strlen(str));
     wrefresh(window);
     char ch = wgetch(window);
-    if (ch != '\n') return menu(window, GAME);
+    if (ch != '\n') return decide_menu(window, GAME);
 
-    return returner;
+    return result;
 }
 
-void roll(struct GAME_T* GAME) {
+int roll(struct GAME_T* GAME) {
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
         GAME->dice[3] = GAME->dice[0];
+        paint_DICE(GAME->ui_2.window, GAME);
+        return 4;
     } else {
         GAME->dice[2] = -1;
         GAME->dice[3] = -1;
+        paint_DICE(GAME->ui_2.window, GAME);
+        return 2;
     }
-    paint_DICE(GAME->ui_2.window, GAME);
 }
 
-int decide(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    char in[10];
+int decide_controls(WINDOW* window, struct GAME_T* GAME) {
+    w_mvwprintw(getmaxy(window) / 2, 4, "R(oll) | M(ove) | S(kip) | E(xit)");
+    char in[10], str[] = "Ruch-Gracza X: ";
+    wmove(window, 2, 2 + strlen(str));
     wgetnstr(window, in, 1);
-    clearLine(1);
-    int returner = atoi(in);
-    switch (returner) {
-        case 1:
-            roll(GAME);
+    wmove(window, 2, 2 + strlen(str));
+    switch (tolower(in[0])) {
+        case 'r':
+            w_wprintw("Roll");
             break;
-        case 2:
-            w_mvwprintw(1, 3, "Choose from list: Move");
+        case 'm':
+            w_wprintw("Move");
             break;
-        case 3:
-            w_mvwprintw(1, 3, "Choose from list: Skip");
+        case 's':
+            w_wprintw("Skip");
             break;
-        case 4:
-            w_mvwprintw(1, 3, "Choose from list: End");
+        case 'e':
+            w_wprintw("Exit");
+            run(GAME);
             break;
         default:
-            w_mvwprintw(1, 3, "Choose from list: Wrong input!");
-            return decide(window, GAME, gracz);
+            w_wprintw("Wrong input!");
+            return decide_controls(window, GAME);
             break;
     }
+    clearLine(2);
+    wmove(window, 2, 2 + strlen(str));
     wrefresh(window);
     char ch = wgetch(window);
-    if (ch != '\n') return decide(window, GAME, gracz);
+    if (ch != '\n') return decide_controls(window, GAME);
+    clearLine(2);
+    w_mvwprintw(2, 0, "│");
+    return tolower(in[0]);
+}
+
+void comms(WINDOW* window, char* str, int kolor, int gracz) {
+    wmove(window, 1, 2);
+    clearLine(1);
+    char prefix[] = "You have to";
+    watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s %s!",
+                                           kolor == RED ? prefix : "\b", str););
+          atrrCLR(gracz == 1 ? MAGENTA : CYAN,
+                  mvwprintw(window, 2, 2,
+                            "Ruch-Gracza %s: ", gracz == 1 ? "A" : "B")););
+    wrefresh(window);
+}
+
+int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    char in[10], str[] = "Ruch-Gracza X: ";
+    wmove(window, 2, 2 + strlen(str));
+    wgetnstr(window, in, 2);
+    wmove(window, 2, 2 + strlen(str));
+    int result = atoi(in);
+    if (result < 1 || result > 24) {
+        w_wprintw("Wrong input!");
+        return get_number(window, GAME, gracz);
+    }
+    clearLine(2);
+    wmove(window, 2, 2 + strlen(str));
+    wrefresh(window);
+    char ch = wgetch(window);
+    if (ch != '\n') return get_number(window, GAME, gracz);
+    clearLine(2);
+    w_mvwprintw(2, 0, "│");
+    return result;
+}
+
+int move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    int wykonane_ruchy = 1;
+    comms(window, "Wykonano ruch", GREEN, gracz);
+
+    // check_bar(GAME, gracz);
+    // check_zbicie(GAME, gracz);
+    // check_dwor(GAME, gracz);
+
+    comms(window, "Wybierz pionek", GREEN, gracz);
+    w_mvwprintw(getmaxy(window) / 2, 4, "Choose number from 1 to 24         ");
+    int pionek = get_number(window, GAME, gracz);
+
+    // decide_move(window, GAME, gracz);
+
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    return wykonane_ruchy;
 }
 
 void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    watrr(A_BOLD, atrrCLR(RED, mvwprintw(window, 1, 2, "You have to %s!",
-                                         GAME->komunikat););
-          atrrCLR(gracz == 1 ? MAGENTA : CYAN,
-                  mvwprintw(window, 2, 2,
-                            "Ruch: Gracza %s: ", gracz == 1 ? "A" : "B")););
+    comms(window, GAME->komunikat, GREEN, gracz);
     wrefresh(window);
-    switch (decide(window, GAME, gracz)) {
-        case 1:
-            /* code */
-            break;
-
-        default:
-            break;
+    while (decide_controls(window, GAME) != 'r') {
+        comms(window, "roll dice first", RED, gracz);
+    }
+    int kostki = roll(GAME);
+    comms(window, "You can move now", GREEN, gracz);
+    while (kostki > 0) {
+        while (decide_controls(window, GAME) != 'm') {
+            comms(window, "move", RED, gracz);
+        }
+        kostki -= move_action(window, GAME, gracz);
+    }
+    comms(window, "You can skip now", GREEN, gracz);
+    while (decide_controls(window, GAME) != 's') {
+        comms(window, "skip", RED, gracz);
     }
 }
-
-void gameplay(struct GAME_T* GAME) {
-    while (1) {
-        turn(GAME->controls.window, GAME, PLAYER_A);
-        // check_win(GAME);
-        // round(GAME->controls.window, GAME, PLAYER_B);
-        // check_win(GAME);
-    }
+void gameplay(struct GAME_T* GAME, int gracz) {
+    // while (1) {
+    //     if (gracz == PLAYER_A) {
+    turn(GAME->controls.window, GAME, PLAYER_A);
+    //         check_win(GAME);
+    // turn(GAME->controls.window, GAME, PLAYER_B);
+    //         check_win(GAME);
+    //     } else {
+    //         turn(GAME->controls.window, GAME, PLAYER_B);
+    //         check_win(GAME);
+    //         turn(GAME->controls.window, GAME, PLAYER_A);
+    //         check_win(GAME);
+    //     }
+    // }
 }
 
 void run(struct GAME_T* GAME) {
-    printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
     paint_HALL(GAME->aside.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
 
     refresh();
 
-    switch (menu(GAME->menu.window, GAME)) {
+    switch (decide_menu(GAME->menu.window, GAME)) {
         case 1:
             paint_STATE(GAME->aside.window, GAME);
             paint_DICE(GAME->ui_2.window, GAME);
+            paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
             paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
-            paint_CONTROLS(GAME->controls.window, GAME);
-            gameplay(GAME);
+            gameplay(GAME, PLAYER_A);
+            run(GAME);
+            break;
+        case 2:
+            // load_save(GAME);
+            paint_STATE(GAME->aside.window, GAME);
+            paint_DICE(GAME->ui_2.window, GAME);
+            paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+            paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
+            gameplay(GAME, PLAYER_B);
+            break;
+        case 3:
+            paint_STATE(GAME->aside.window, GAME);
+            paint_DICE(GAME->ui_2.window, GAME);
+            paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+            // paint_REPLAY(GAME->controls.window, GAME, PLAYER_A);
+            // replay(GAME);
             break;
 
         default:
@@ -227,7 +313,7 @@ void initGame(struct GAME_T* GAME) {
     GAME->dice[0] = -1;
     GAME->dice[1] = -1;
 
-    strcpy(GAME->komunikat, "roll the dice");
+    strcpy(GAME->komunikat, "Good luck and have fun!");
 
     GAME->gracz_A.wynik = 0;
     GAME->gracz_B.wynik = 0;
@@ -242,6 +328,7 @@ int main() {
     if (initialInit()) {
         struct GAME_T* GAME = (struct GAME_T*)malloc(sizeof(struct GAME_T));
         if (GAME == NULL) return 1;
+        printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
         initWindows(GAME);
         initGame(GAME);
         run(GAME);
