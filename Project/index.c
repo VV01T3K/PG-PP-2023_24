@@ -11,20 +11,19 @@ void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     watrr(A_BOLD, w_mvwprintw(0, 1, "State"););
     wrefresh(window);
 }
+
 void paint_HALL(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(1, 7, "Hall of Fame"););
     wrefresh(window);
 }
+
 void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
-    w_mvwprintw(1, 2, "Gracz A");
-    w_wprintw(": choose dice [1-4] or [R]oll");
     w_mvwprintw(getmaxy(window) - 1, 1, "Controls");
     w_mvwprintw(getmaxy(window) / 2, 4, "R(oll) | M(ove) | S(kip) | E(nd)");
-    w_mvwprintw(2, 2, "Ruch: ");
     wrefresh(window);
 }
 
@@ -66,39 +65,44 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
 
     watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, "Backgammon─1.0"););
 
-    w_mvwprintw(6, 4, "1) New Game");
-    w_mvwprintw(7, 4, "2) Load Game");
-    w_mvwprintw(8, 4, "3) Replay");
-    w_mvwprintw(9, 4, "4) Exit");
+    w_mvwprintw(5, 3, "( Enter x2 to confirm :v )");
+
+    w_mvwprintw(8, 4, "1) New Game");
+    w_mvwprintw(9, 4, "2) Load Game");
+    w_mvwprintw(10, 4, "3) Replay");
+    w_mvwprintw(11, 4, "4) Exit");
 
     wrefresh(window);
 }
 
 int menu(WINDOW* window, struct GAME_T* GAME) {
-    w_mvwprintw(4, 3, "Choose from list: ");
+    char str[] = "Choose from list: ";
+    w_mvwprintw(4, 3, str);
     char in[10];
     wgetnstr(window, in, 1);
-    clearLine(4);
+    wmove(window, 4, 3 + strlen(str));
     int returner = atoi(in);
     switch (returner) {
         case 1:
-            w_mvwprintw(4, 3, "Choose from list: New Game");
+            w_wprintw("New Game");
             break;
         case 2:
-            w_mvwprintw(4, 3, "Choose from list: Load Game");
+            w_wprintw("Load Game");
             break;
         case 3:
-            w_mvwprintw(4, 3, "Choose from list: Replay");
+            w_wprintw("Replay");
             break;
         case 4:
             endwin();
             exit(0);
             break;
         default:
-            w_mvwprintw(4, 3, "Choose from list: Wrong input!");
+            w_wprintw("Wrong input!");
             return menu(window, GAME);
             break;
     }
+    clearLine(4);
+    wmove(window, 4, 3 + strlen(str));
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return menu(window, GAME);
@@ -119,14 +123,57 @@ void roll(struct GAME_T* GAME) {
     paint_DICE(GAME->ui_2.window, GAME);
 }
 
-void round(struct GAME_T* GAME, struct GRACZ_T gracz) { sw }
+int decide(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    char in[10];
+    wgetnstr(window, in, 1);
+    clearLine(1);
+    int returner = atoi(in);
+    switch (returner) {
+        case 1:
+            roll(GAME);
+            break;
+        case 2:
+            w_mvwprintw(1, 3, "Choose from list: Move");
+            break;
+        case 3:
+            w_mvwprintw(1, 3, "Choose from list: Skip");
+            break;
+        case 4:
+            w_mvwprintw(1, 3, "Choose from list: End");
+            break;
+        default:
+            w_mvwprintw(1, 3, "Choose from list: Wrong input!");
+            return decide(window, GAME, gracz);
+            break;
+    }
+    wrefresh(window);
+    char ch = wgetch(window);
+    if (ch != '\n') return decide(window, GAME, gracz);
+}
+
+void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    watrr(A_BOLD, atrrCLR(RED, mvwprintw(window, 1, 2, "You have to %s!",
+                                         GAME->komunikat););
+          atrrCLR(gracz == 1 ? MAGENTA : CYAN,
+                  mvwprintw(window, 2, 2,
+                            "Ruch: Gracza %s: ", gracz == 1 ? "A" : "B")););
+    wrefresh(window);
+    switch (decide(window, GAME, gracz)) {
+        case 1:
+            /* code */
+            break;
+
+        default:
+            break;
+    }
+}
 
 void gameplay(struct GAME_T* GAME) {
     while (1) {
-        round(GAME, GAME->gracz_A);
-        check_win(GAME);
-        round(GAME, GAME->gracz_B);
-        check_win(GAME);
+        turn(GAME->controls.window, GAME, PLAYER_A);
+        // check_win(GAME);
+        // round(GAME->controls.window, GAME, PLAYER_B);
+        // check_win(GAME);
     }
 }
 
@@ -179,6 +226,8 @@ void initGame(struct GAME_T* GAME) {
 
     GAME->dice[0] = -1;
     GAME->dice[1] = -1;
+
+    strcpy(GAME->komunikat, "roll the dice");
 
     GAME->gracz_A.wynik = 0;
     GAME->gracz_B.wynik = 0;

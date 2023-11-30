@@ -7,6 +7,9 @@
 #define MAX_BAR 6
 #define POLE_COUNT 24
 
+#define PLAYER_A 1
+#define PLAYER_B 2
+
 #define PIONKI_HEIGHT 5
 #define BOARD_PADDING 2
 #define BOARD_WIDTH 47
@@ -41,14 +44,17 @@
 
 // Makra
 #define CLR(x) COLOR_PAIR(x)
+
 #define atrrCLR(clr, _print)          \
     wattron(window, COLOR_PAIR(clr)); \
     _print;                           \
     wattroff(window, COLOR_PAIR(clr));
+
 #define watrr(other, _print) \
     wattron(window, other);  \
     _print;                  \
     wattroff(window, other);
+
 #define atrr(other, _print) \
     attron(other);          \
     _print;                 \
@@ -59,9 +65,7 @@
 #define w_wprintw(str) wprintw(window, str);
 
 #define clearLine(y)                          \
-    wmove(window, y, 0);                      \
     wclrtoeol(window);                        \
-    w_mvwprintw(y, 0, "│");                   \
     w_mvwprintw(y, getmaxx(window) - 1, "│"); \
     wrefresh(window);
 
@@ -108,4 +112,5 @@ struct GAME_T {
     struct UI_T ui_2;
     struct UI_T menu;
     int dice[4];
+    char komunikat[200];
 };
