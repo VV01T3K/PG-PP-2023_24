@@ -6,6 +6,7 @@
 #include "headers.h"
 
 void run(struct GAME_T* GAME);
+void paint_GAMEVIEW(struct GAME_T* GAME);
 
 void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
@@ -236,6 +237,13 @@ void gameplay(struct GAME_T* GAME, int gracz) {
     // }
 }
 
+void paint_GAMEVIEW(struct GAME_T* GAME) {
+    paint_STATE(GAME->aside.window, GAME);
+    paint_DICE(GAME->ui_2.window, GAME);
+    paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+}
+
 void run(struct GAME_T* GAME) {
     paint_HALL(GAME->aside.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
@@ -244,19 +252,13 @@ void run(struct GAME_T* GAME) {
 
     switch (decide_menu(GAME->menu.window, GAME)) {
         case 1:
-            paint_STATE(GAME->aside.window, GAME);
-            paint_DICE(GAME->ui_2.window, GAME);
-            paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
-            paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+            paint_GAMEVIEW(GAME);
             gameplay(GAME, PLAYER_A);
             run(GAME);
             break;
         case 2:
             // load_save(GAME);
-            paint_STATE(GAME->aside.window, GAME);
-            paint_DICE(GAME->ui_2.window, GAME);
-            paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
-            paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
+            paint_GAMEVIEW(GAME);
             gameplay(GAME, PLAYER_B);
             break;
         case 3:
