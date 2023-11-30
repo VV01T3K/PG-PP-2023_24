@@ -6,7 +6,7 @@
 void paint_BOARD(WINDOW* window, struct GAME_T* GAME, int pad) {
     box(window, 0, 0);
     int i, mv;
-    for (i = 0, mv = 0; i < 12; i++) {
+    for (i = 0, mv = 0; i < BOARD_HEIGHT - 1; i++) {
         if (i == 6) {
             paint_BAR((3 * i) + (pad * 2), pad, window, GAME->plansza.bar);
             mv += 5;
@@ -27,7 +27,7 @@ void paint_POLE_TOP(int x, int pad, int kolor, WINDOW* window,
     int i, y = 0 + pad, tmp = pole.liczba;
     x += pad * 2;
     mvwprintw(window, y - 1, x - (pole.number > 9 ? 1 : 0), "%d", pole.number);
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < PIONKI_HEIGHT; i++) {
         if (tmp-- > 0) {
             atrrCLR(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
         } else {
@@ -40,7 +40,7 @@ void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window,
                     struct POLE_T pole) {
     int i, y = 8 + pad, tmp = pole.liczba;
     x += pad * 2;
-    mvwprintw(window, y + 5, x - 1, "%d", pole.number);
+    mvwprintw(window, y + PIONKI_HEIGHT, x - 1, "%d", pole.number);
     for (i = 4; i >= 0; i--) {
         if (tmp-- > 0) {
             atrrCLR(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
@@ -54,25 +54,24 @@ void paint_BAR_A(int x, int y, WINDOW* window, struct BAR_T bar) {
     int i, tmp_A = bar.gracz_A;
     for (i = 0; i < bar.gracz_A; i++) {
         if (i >= MAX_BAR) {
-            mvwprintw(window, y + BOARD_PIONKI_HEIGHT - i, x, "+%d",
-                      bar.gracz_A - i);
+            mvwprintw(window, y + PIONKI_HEIGHT - i, x, "+%d", bar.gracz_A - i);
             break;
         }
-        atrrCLR(MAGENTA, mvwprintw(window, y + BOARD_PIONKI_HEIGHT - i, x + 1,
-                                   "%s", PIONEK));
+        atrrCLR(MAGENTA,
+                mvwprintw(window, y + PIONKI_HEIGHT - i, x + 1, "%s", PIONEK));
     }
 }
 void paint_BAR_B(int x, int y, WINDOW* window, struct BAR_T bar) {
     int i, tmp_A = bar.gracz_B;
     for (i = 0; i < bar.gracz_B; i++) {
         if (i >= MAX_BAR) {
-            mvwprintw(window, y + BOARD_HEIGHT - BOARD_PIONKI_HEIGHT - 1 + i, x,
+            mvwprintw(window, y + BOARD_HEIGHT - PIONKI_HEIGHT - 1 + i, x,
                       "+%d", bar.gracz_B - i);
             break;
         }
-        atrrCLR(CYAN, mvwprintw(window,
-                                y + BOARD_HEIGHT - BOARD_PIONKI_HEIGHT - 1 + i,
-                                x + 1, "%s", PIONEK));
+        atrrCLR(CYAN,
+                mvwprintw(window, y + BOARD_HEIGHT - PIONKI_HEIGHT - 1 + i,
+                          x + 1, "%s", PIONEK));
     }
 }
 void paint_BAR(int x, int y, WINDOW* window, struct BAR_T bar) {

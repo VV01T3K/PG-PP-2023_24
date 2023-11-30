@@ -32,10 +32,10 @@ void run(struct GAME_T* GAME) {
 
     paint_UI_2(GAME->ui_2.window, GAME);
     paint_STATE(GAME->state.window, GAME);
-    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
     paint_CONTROLS(GAME->controls.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
     paint_STATE(GAME->hall_of_fame.window, GAME);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 
 void placePionki(struct GAME_T* GAME) {
@@ -52,7 +52,7 @@ void placePionki(struct GAME_T* GAME) {
 }
 
 void initGame(struct GAME_T* GAME) {
-    for (int i = 1; i < 25; i++) {
+    for (int i = 1; i < POLE_COUNT + 1; i++) {
         GAME->plansza.pole[i].liczba = 0;
         GAME->plansza.pole[i].kolor = 0;
         GAME->plansza.pole[i].xyPos = 0;

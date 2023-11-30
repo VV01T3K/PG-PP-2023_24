@@ -5,14 +5,15 @@
 #define MAX_HALL_OF_FAME 10
 #define MAX_NAME 20
 #define MAX_BAR 6
+#define POLE_COUNT 24
 
+#define PIONKI_HEIGHT 5
 #define BOARD_PADDING 2
 #define BOARD_WIDTH 47
 #define PADDED_BOARD_WIDTH (BOARD_WIDTH + (BOARD_PADDING * 3))
 #define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
 
 #define BOARD_HEIGHT 13
-#define BOARD_PIONKI_HEIGHT 5
 
 // Znaki
 // #define BLOCK "\u25A7"
@@ -66,7 +67,7 @@ struct DWOR_T {
 };
 struct PLANSZA_T {
     WINDOW* window;
-    struct POLE_T pole[25];
+    struct POLE_T pole[POLE_COUNT + 1];
     struct BAR_T bar;
     struct DWOR_T dwor;
     // struct KOSTKA_T kostka;
