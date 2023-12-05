@@ -11,6 +11,10 @@
 #define PLAYER_A 1
 #define PLAYER_B 2
 
+#define STARTED 0
+#define PLAYING 1
+#define ENDED 2
+
 #define PIONKI_HEIGHT 5
 #define BOARD_PADDING 2
 #define BOARD_WIDTH 47
@@ -124,4 +128,5 @@ struct GAME_T {
     struct UI_T menu;
     int dice[4];
     char komunikat[200];
+    int status;
 };

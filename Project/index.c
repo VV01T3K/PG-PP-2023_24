@@ -4,7 +4,7 @@
 
 #include "define.h"
 #include "headers.h"
-
+void initGame(struct GAME_T* GAME);
 void run(struct GAME_T* GAME);
 void paint_GAMEVIEW(struct GAME_T* GAME);
 
@@ -43,7 +43,7 @@ void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
     w_mvwprintw(getmaxy(window) - 1, 1, "Kostki");
 
-    if (GAME->dice[1] == -1) {
+    if (GAME->dice[0] == -1) {
         w_mvwprintw(2, 6, "Rzuć kostkami!");
         wrefresh(window);
         return;
@@ -54,7 +54,7 @@ void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     printDICE(window, 3, 6, GAME, 2);
     printDICE(window, 3, 16, GAME, 3);
 
-    if (GAME->dice[0] == GAME->dice[1]) {
+    if (GAME->dice[0] == GAME->dice[1] && GAME->status == PLAYING) {
         w_mvwprintw(4, 6, "Podwójny ruch!");
     }
 
@@ -222,19 +222,21 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     }
 }
 void gameplay(struct GAME_T* GAME, int gracz) {
-    // while (1) {
-    //     if (gracz == PLAYER_A) {
-    turn(GAME->controls.window, GAME, PLAYER_A);
-    //         check_win(GAME);
-    // turn(GAME->controls.window, GAME, PLAYER_B);
-    //         check_win(GAME);
-    //     } else {
-    //         turn(GAME->controls.window, GAME, PLAYER_B);
-    //         check_win(GAME);
-    //         turn(GAME->controls.window, GAME, PLAYER_A);
-    //         check_win(GAME);
-    //     }
-    // }
+    GAME->status = PLAYING;
+    paint_DICE(GAME->ui_2.window, GAME);
+    while (1) {
+        if (gracz == PLAYER_A) {
+            turn(GAME->controls.window, GAME, PLAYER_A);
+            // check_win(GAME);
+            turn(GAME->controls.window, GAME, PLAYER_B);
+            // check_win(GAME);
+        } else {
+            turn(GAME->controls.window, GAME, PLAYER_B);
+            // check_win(GAME);
+            turn(GAME->controls.window, GAME, PLAYER_A);
+            // check_win(GAME);
+        }
+    }
 }
 
 void paint_GAMEVIEW(struct GAME_T* GAME) {
@@ -242,6 +244,36 @@ void paint_GAMEVIEW(struct GAME_T* GAME) {
     paint_DICE(GAME->ui_2.window, GAME);
     paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+}
+void starting_roll(struct GAME_T* GAME, WINDOW* window, int gracz) {
+    comms(window, "Roll to decide who starts", GREEN, gracz);
+    wrefresh(window);
+    while (decide_controls(window, GAME) != 'r') {
+        comms(window, "roll to decide who starts", RED, gracz);
+    }
+    GAME->dice[gracz - 1] = rand() % 6 + 1;
+    paint_DICE(GAME->ui_2.window, GAME);
+    wrefresh(window);
+}
+int who_starts(struct GAME_T* GAME) {
+    WINDOW* window = GAME->controls.window;
+    starting_roll(GAME, window, PLAYER_A);
+    starting_roll(GAME, window, PLAYER_B);
+    if (GAME->dice[0] > GAME->dice[1]) {
+        comms(window, "Player A starts (Press Any key to continue)", GREEN,
+              PLAYER_A);
+        getch();
+        return PLAYER_A;
+    } else if (GAME->dice[0] < GAME->dice[1]) {
+        comms(window, "Player B starts (Press Any key to continue)", GREEN,
+              PLAYER_B);
+        getch();
+        return PLAYER_B;
+    } else {
+        comms(window, "Roll again", GREEN, PLAYER_A);
+        getch();
+        return who_starts(GAME);
+    }
 }
 
 void run(struct GAME_T* GAME) {
@@ -253,7 +285,9 @@ void run(struct GAME_T* GAME) {
     switch (decide_menu(GAME->menu.window, GAME)) {
         case 1:
             paint_GAMEVIEW(GAME);
-            gameplay(GAME, PLAYER_A);
+            int gracz = who_starts(GAME);
+            initGame(GAME);
+            gameplay(GAME, gracz);
             run(GAME);
             break;
         case 2:
@@ -288,6 +322,8 @@ void placePionki(struct GAME_T* GAME) {
 }
 
 void initGame(struct GAME_T* GAME) {
+    GAME->status = STARTED;
+
     for (int i = 1; i < POLE_COUNT + 1; i++) {
         GAME->plansza.pole[i].liczba = 0;
         GAME->plansza.pole[i].kolor = 0;
@@ -302,6 +338,8 @@ void initGame(struct GAME_T* GAME) {
 
     GAME->dice[0] = -1;
     GAME->dice[1] = -1;
+    GAME->dice[2] = -1;
+    GAME->dice[3] = -1;
 
     strcpy(GAME->komunikat, "Good luck and have fun!");
 
