@@ -6,6 +6,7 @@
 
 #include "define.h"
 #include "headers.h"
+void capture(struct GAME_T* GAME, int docelowe, int gracz);
 void save_game(struct GAME_T* GAME, int gracz) {
     fprintf(GAME->save, "Zaczyna: %d | SEED: %d\n", gracz, GAME->rand_seed);
 }
@@ -121,8 +122,9 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
 int roll(struct GAME_T* GAME) {
     GAME->dublet = FALSE;
     // GAME->dice[0] = rand() % 6 + 1;
+    // GAME->dice[1] = rand() % 6 + 1;
     GAME->dice[0] = 5;
-    GAME->dice[1] = rand() % 6 + 1;
+    GAME->dice[1] = 5;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -200,8 +202,14 @@ int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz) {
     int result = atoi(in);
     if (result < 1 || result > (GAME->dice[3] != -1 ? 4 : 2)) {
         w_wprintw("Wrong input!");
+        clearLine(2);
         return get_dice(window, GAME, gracz);
     }
+    if (GAME->dice[result - 1] == 0) {
+        w_wprintw("Dice already used!");
+        return get_dice(window, GAME, gracz);
+    }
+
     wprintw(window, "Kostka Nr %d", result);
     clearLine(2);
     wmove(window, 2, controls_padd);
@@ -227,12 +235,74 @@ void move_pionek(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
     GAME->dice[kostka - 1] = 0;
     paint_DICE(GAME->ui_2.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    GAME->pozostałe_ruchy--;
 }
 
-int verify_forced_move(struct GAME_T* GAME, int gracz) {
-    // check_bar(GAME, gracz); // return 1 if forced move
-    // check_zbicie(GAME, gracz); // return 1 if forced move
-    // check_dwor(GAME, gracz); // return 1 if forced move
+int verify_bar_move(struct GAME_T* GAME, int kostka, int gracz) {
+    int docelowe = gracz == PLAYER_A ? GAME->dice[kostka - 1]
+                                     : POLE_COUNT - GAME->dice[kostka - 1];
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+
+    if (GAME->plansza.pole[docelowe].kolor != kolor &&
+        GAME->plansza.pole[docelowe].liczba > 1) {
+        comms(GAME->controls.window, "choose conquerable field", RED, gracz);
+        return 1;
+    }
+    if (GAME->plansza.pole[docelowe].kolor != kolor &&
+        GAME->plansza.pole[docelowe].liczba == 1) {
+        capture(GAME, docelowe, gracz);
+        comms(GAME->controls.window, "Ładne bicie", GREEN, gracz);
+        getch();
+    }
+    return 0;
+}
+
+void bar_move(struct GAME_T* GAME, int kostka, int gracz) {
+    if (gracz == PLAYER_A) {
+        GAME->plansza.bar.gracz_A--;
+        GAME->plansza.pole[GAME->dice[kostka - 1]].liczba++;
+        GAME->plansza.pole[GAME->dice[kostka - 1]].kolor = CLR_PLAYER_A;
+    } else {
+        GAME->plansza.bar.gracz_B--;
+        GAME->plansza.pole[POLE_COUNT - GAME->dice[kostka - 1]].liczba++;
+        GAME->plansza.pole[POLE_COUNT - GAME->dice[kostka - 1]].kolor =
+            CLR_PLAYER_B;
+    }
+    GAME->dice[kostka - 1] = 0;
+    paint_DICE(GAME->ui_2.window, GAME);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    GAME->pozostałe_ruchy--;
+}
+
+int forced_bar(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    if (gracz == PLAYER_A) {
+        if (!GAME->plansza.bar.gracz_A > 0) {
+            return 0;
+        }
+    } else if (gracz == PLAYER_B) {
+        if (!GAME->plansza.bar.gracz_B > 0) {
+            return 0;
+        }
+    }
+    comms(window, "move from bar [ENTER]", RED, gracz);
+    getch();
+    comms(window, "Wybierz kostke", GREEN, gracz);
+    w_mvwprintw(3, 4, "Choose number of dice from bottom right panel");
+    clearLine(3);
+    int kostka = get_dice(window, GAME, gracz);
+    if (verify_bar_move(GAME, kostka, gracz)) {
+        getch();
+        return forced_bar(window, GAME, gracz);
+    }
+    bar_move(GAME, kostka, gracz);
+    return 1;
+}
+
+int forced_move(struct GAME_T* GAME, int gracz) {
+    WINDOW* window = GAME->controls.window;
+    while (forced_bar(window, GAME, gracz)) {
+    };
+    // if (forced_dwor(GAME, gracz)) return 1;
     return 0;
 }
 void capture(struct GAME_T* GAME, int docelowe, int gracz) {
@@ -273,7 +343,7 @@ int verify_move(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     comms(window, "Wykonano ruch", GREEN, gracz);
 
-    if (verify_forced_move(GAME, gracz)) return;
+    if (forced_move(GAME, gracz)) return;
 
     comms(window, "Wybierz pionek", GREEN, gracz);
     w_mvwprintw(3, 4, "Choose number from 1 to 24");
@@ -306,15 +376,14 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
         comms(window, "roll dice first", RED, gracz);
     }
     strcat(ruchy, " r");
-    int kostki = roll(GAME);
+    GAME->pozostałe_ruchy = roll(GAME);
     comms(window, "You can move now", GREEN, gracz);
-    while (kostki > 0) {
+    while (GAME->pozostałe_ruchy > 0) {
         while (decide_controls(window, GAME) != 'm') {
             comms(window, "move", RED, gracz);
         }
         strcat(ruchy, " m");
         move_action(window, GAME, gracz);
-        kostki--;
     }
     comms(window, "You can skip now", GREEN, gracz);
     while (decide_controls(window, GAME) != 's') {
@@ -329,7 +398,7 @@ void gameplay(struct GAME_T* GAME, int gracz) {
     //     if (gracz == PLAYER_A) {
     turn(GAME->controls.window, GAME, PLAYER_A);
     //         check_win(GAME);
-    //         turn(GAME->controls.window, GAME, PLAYER_B);
+    turn(GAME->controls.window, GAME, PLAYER_B);
     //         check_win(GAME);
     //     } else {
     //         turn(GAME->controls.window, GAME, PLAYER_B);
@@ -444,7 +513,7 @@ void initGame(struct GAME_T* GAME) {
         GAME->plansza.pole[i].number = i;
     }
     placePionki(GAME);
-    GAME->plansza.bar.gracz_A = 0;
+    GAME->plansza.bar.gracz_A = 2;
     GAME->plansza.bar.gracz_B = 0;
     GAME->plansza.dwor.gracz_A = 0;
     GAME->plansza.dwor.gracz_B = 0;

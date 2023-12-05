@@ -85,7 +85,7 @@
     wclrtoeol(window);                        \
     w_mvwprintw(y, getmaxx(window) - 1, "│"); \
     wrefresh(window);                         \
-    w_mvwprintw(2, 0, "│");
+    w_mvwprintw(y, 0, "│");
 
 // Struktury
 struct POLE_T {
@@ -134,4 +134,5 @@ struct GAME_T {
     int rand_seed;
     FILE* save;
     int dublet;
+    int pozostałe_ruchy;
 };
