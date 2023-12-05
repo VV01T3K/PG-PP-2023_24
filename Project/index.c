@@ -203,6 +203,7 @@ int move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
 }
 
 void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    char ruchy[100];
     comms(window, GAME->komunikat, GREEN, gracz);
     wrefresh(window);
     while (decide_controls(window, GAME) != 'r') {
@@ -220,23 +221,24 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     while (decide_controls(window, GAME) != 's') {
         comms(window, "skip", RED, gracz);
     }
+    // save(ruchy);
 }
 void gameplay(struct GAME_T* GAME, int gracz) {
     GAME->status = PLAYING;
     paint_DICE(GAME->ui_2.window, GAME);
-    while (1) {
-        if (gracz == PLAYER_A) {
-            turn(GAME->controls.window, GAME, PLAYER_A);
-            // check_win(GAME);
-            turn(GAME->controls.window, GAME, PLAYER_B);
-            // check_win(GAME);
-        } else {
-            turn(GAME->controls.window, GAME, PLAYER_B);
-            // check_win(GAME);
-            turn(GAME->controls.window, GAME, PLAYER_A);
-            // check_win(GAME);
-        }
-    }
+    // while (1) {
+    //     if (gracz == PLAYER_A) {
+    turn(GAME->controls.window, GAME, PLAYER_A);
+    //         check_win(GAME);
+    //         turn(GAME->controls.window, GAME, PLAYER_B);
+    //         check_win(GAME);
+    //     } else {
+    //         turn(GAME->controls.window, GAME, PLAYER_B);
+    //         check_win(GAME);
+    //         turn(GAME->controls.window, GAME, PLAYER_A);
+    //         check_win(GAME);
+    //     }
+    // }
 }
 
 void paint_GAMEVIEW(struct GAME_T* GAME) {
@@ -275,7 +277,12 @@ int who_starts(struct GAME_T* GAME) {
         return who_starts(GAME);
     }
 }
-
+void save_game(struct GAME_T* GAME, int gracz) {
+    fprintf(GAME->save, "Zaczyna: %d | SEED: %d\n", gracz, GAME->rand_seed);
+}
+void save_turn(struct GAME_T* GAME, char* ruchy) {
+    fprintf(GAME->save, "-> %s\n", ruchy);
+}
 void run(struct GAME_T* GAME) {
     paint_HALL(GAME->aside.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
@@ -285,15 +292,24 @@ void run(struct GAME_T* GAME) {
     switch (decide_menu(GAME->menu.window, GAME)) {
         case 1:
             paint_GAMEVIEW(GAME);
-            int gracz = who_starts(GAME);
-            initGame(GAME);
-            gameplay(GAME, gracz);
+            // int gracz = who_starts(GAME);
+            // initGame(GAME);
+            // gameplay(GAME, gracz);
+            gameplay(GAME, PLAYER_A);
             run(GAME);
             break;
         case 2:
+            char ruchy[100];
+            save_game(GAME, PLAYER_B);
+            strcpy(ruchy, "r m 10 2+1");
+            save_turn(GAME, ruchy);
+            strcpy(ruchy, "r m 15 2+1");
+            save_turn(GAME, ruchy);
+            strcpy(ruchy, "r m 20 3");
+            save_turn(GAME, ruchy);
             // load_save(GAME);
-            paint_GAMEVIEW(GAME);
-            gameplay(GAME, PLAYER_B);
+            // paint_GAMEVIEW(GAME);
+            // gameplay(GAME, PLAYER_B);
             break;
         case 3:
             paint_STATE(GAME->aside.window, GAME);
@@ -323,6 +339,7 @@ void placePionki(struct GAME_T* GAME) {
 
 void initGame(struct GAME_T* GAME) {
     GAME->status = STARTED;
+    GAME->save = fopen("savedGame.txt", "w");
 
     for (int i = 1; i < POLE_COUNT + 1; i++) {
         GAME->plansza.pole[i].liczba = 0;
@@ -353,9 +370,9 @@ void initGame(struct GAME_T* GAME) {
 }
 
 int main() {
-    if (initialInit()) {
-        struct GAME_T* GAME = (struct GAME_T*)malloc(sizeof(struct GAME_T));
-        if (GAME == NULL) return 1;
+    struct GAME_T* GAME = (struct GAME_T*)malloc(sizeof(struct GAME_T));
+    if (GAME == NULL) return 1;
+    if (initialInit(GAME)) {
         printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
         initWindows(GAME);
         initGame(GAME);

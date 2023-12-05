@@ -129,4 +129,6 @@ struct GAME_T {
     int dice[4];
     char komunikat[200];
     int status;
+    int rand_seed;
+    FILE* save;
 };

@@ -42,8 +42,9 @@ void initWindows(struct GAME_T* GAME) {
     refresh();
 }
 
-char initialInit() {
-    srand(time(NULL));
+char initialInit(struct GAME_T* GAME) {
+    GAME->rand_seed = time(NULL);
+    srand(GAME->rand_seed);
     setlocale(LC_ALL, "");
     initscr();
     if (has_colors() == TRUE) {
