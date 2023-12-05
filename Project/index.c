@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <ncurses.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "define.h"
 #include "headers.h"
@@ -209,19 +210,22 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     while (decide_controls(window, GAME) != 'r') {
         comms(window, "roll dice first", RED, gracz);
     }
+    strcat(ruchy, " r");
     int kostki = roll(GAME);
     comms(window, "You can move now", GREEN, gracz);
     while (kostki > 0) {
         while (decide_controls(window, GAME) != 'm') {
             comms(window, "move", RED, gracz);
         }
+        strcat(ruchy, " m");
         kostki -= move_action(window, GAME, gracz);
     }
     comms(window, "You can skip now", GREEN, gracz);
     while (decide_controls(window, GAME) != 's') {
         comms(window, "skip", RED, gracz);
     }
-    // save(ruchy);
+    strcat(ruchy, " s");
+    save_turn(GAME, ruchy);
 }
 void gameplay(struct GAME_T* GAME, int gracz) {
     GAME->status = PLAYING;
@@ -281,7 +285,7 @@ void save_game(struct GAME_T* GAME, int gracz) {
     fprintf(GAME->save, "Zaczyna: %d | SEED: %d\n", gracz, GAME->rand_seed);
 }
 void save_turn(struct GAME_T* GAME, char* ruchy) {
-    fprintf(GAME->save, "-> %s\n", ruchy);
+    fprintf(GAME->save, "->%s\n", ruchy);
 }
 void run(struct GAME_T* GAME) {
     paint_HALL(GAME->aside.window, GAME);
@@ -293,20 +297,21 @@ void run(struct GAME_T* GAME) {
         case 1:
             paint_GAMEVIEW(GAME);
             // int gracz = who_starts(GAME);
+            // save_game(GAME, gracz);
             // initGame(GAME);
             // gameplay(GAME, gracz);
             gameplay(GAME, PLAYER_A);
             run(GAME);
             break;
         case 2:
-            char ruchy[100];
-            save_game(GAME, PLAYER_B);
-            strcpy(ruchy, "r m 10 2+1");
-            save_turn(GAME, ruchy);
-            strcpy(ruchy, "r m 15 2+1");
-            save_turn(GAME, ruchy);
-            strcpy(ruchy, "r m 20 3");
-            save_turn(GAME, ruchy);
+            // char ruchy[100];
+            // save_game(GAME, PLAYER_B);
+            // strcpy(ruchy, "r m 10 2+1");
+            // save_turn(GAME, ruchy);
+            // strcpy(ruchy, "r m 15 2+1");
+            // save_turn(GAME, ruchy);
+            // strcpy(ruchy, "r m 20 3");
+            // save_turn(GAME, ruchy);
             // load_save(GAME);
             // paint_GAMEVIEW(GAME);
             // gameplay(GAME, PLAYER_B);
