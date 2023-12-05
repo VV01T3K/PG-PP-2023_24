@@ -6,7 +6,6 @@
 #define MAX_NAME 20
 #define MAX_BAR 6
 #define POLE_COUNT 24
-#define MAX_INPUT_LENGTH 10
 
 #define PLAYER_A 1
 #define PLAYER_B 2
@@ -52,10 +51,10 @@
 #define COLOR_DARK_BLUE 81
 
 // Makra
-#define W_GETNSTR_IN(n, y, x)  \
-    char in[MAX_INPUT_LENGTH]; \
-    wmove(window, y, x);       \
-    wgetnstr(window, in, n);   \
+#define W_GETNSTR_IN(n, y, x) \
+    char in[n + 1];           \
+    wmove(window, y, x);      \
+    wgetnstr(window, in, n);  \
     wmove(window, y, x);
 
 #define CLR(x) COLOR_PAIR(x)
@@ -82,7 +81,8 @@
 #define clearLine(y)                          \
     wclrtoeol(window);                        \
     w_mvwprintw(y, getmaxx(window) - 1, "│"); \
-    wrefresh(window);
+    wrefresh(window);                         \
+    w_mvwprintw(2, 0, "│");
 
 // Struktury
 struct POLE_T {
