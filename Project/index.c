@@ -120,7 +120,8 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
 
 int roll(struct GAME_T* GAME) {
     GAME->dublet = FALSE;
-    GAME->dice[0] = rand() % 6 + 1;
+    // GAME->dice[0] = rand() % 6 + 1;
+    GAME->dice[0] = 5;
     GAME->dice[1] = rand() % 6 + 1;
 
     if (GAME->dice[0] == GAME->dice[1]) {
@@ -234,9 +235,19 @@ int verify_forced_move(struct GAME_T* GAME, int gracz) {
     // check_dwor(GAME, gracz); // return 1 if forced move
     return 0;
 }
+void capture(struct GAME_T* GAME, int docelowe, int gracz) {
+    if (gracz == PLAYER_A) {
+        GAME->plansza.pole[docelowe].kolor = CLR_PLAYER_A;
+        GAME->plansza.bar.gracz_B++;
+    } else {
+        GAME->plansza.pole[docelowe].kolor = CLR_PLAYER_B;
+        GAME->plansza.bar.gracz_A++;
+    }
+    GAME->plansza.pole[docelowe].liczba = 0;
+}
 int verify_move(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
-    int docelowePole = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
-                                                   : -GAME->dice[kostka - 1]);
+    int docelowe = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
+                                               : -GAME->dice[kostka - 1]);
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     if (GAME->plansza.pole[pionek].kolor != kolor) {
         comms(GAME->controls.window, "choose your field", RED, gracz);
@@ -246,10 +257,16 @@ int verify_move(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
         comms(GAME->controls.window, "choose field with pieces", RED, gracz);
         return 1;
     }
-    if (GAME->plansza.pole[docelowePole].kolor != kolor &&
-        GAME->plansza.pole[docelowePole].liczba > 1) {
+    if (GAME->plansza.pole[docelowe].kolor != kolor &&
+        GAME->plansza.pole[docelowe].liczba > 1) {
         comms(GAME->controls.window, "choose conquerable field", RED, gracz);
         return 1;
+    }
+    if (GAME->plansza.pole[docelowe].kolor != kolor &&
+        GAME->plansza.pole[docelowe].liczba == 1) {
+        capture(GAME, docelowe, gracz);
+        comms(GAME->controls.window, "Ładne bicie", GREEN, gracz);
+        getch();
     }
     return 0;
 }
@@ -267,7 +284,7 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     clearLine(3);
     int kostka = get_dice(window, GAME, gracz);
 
-    while (verify_move(GAME, pionek, kostka, gracz)) {
+    if (verify_move(GAME, pionek, kostka, gracz)) {
         getch();
         return move_action(window, GAME, gracz);
     }
@@ -404,7 +421,7 @@ void run(struct GAME_T* GAME) {
 void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 1, CLR_PLAYER_B},  // 5 -> 1
                   {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
                   {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
                   {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
