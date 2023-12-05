@@ -10,6 +10,9 @@
 #define PLAYER_A 1
 #define PLAYER_B 2
 
+#define CLR_PLAYER_A MAGENTA
+#define CLR_PLAYER_B CYAN
+
 #define STARTED 0
 #define PLAYING 1
 #define ENDED 2
@@ -128,7 +131,7 @@ struct GAME_T {
     struct UI_T menu;
     int dice[4];
     char komunikat[200];
-    int status;
     int rand_seed;
     FILE* save;
+    int dublet;
 };

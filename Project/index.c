@@ -2,6 +2,7 @@
 #include <ncurses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "define.h"
 #include "headers.h"
@@ -61,8 +62,7 @@ void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     printDICE(window, 3, 6, GAME, 2);
     printDICE(window, 3, 16, GAME, 3);
 
-    if (GAME->dice[0] == GAME->dice[1] && GAME->status == PLAYING &&
-        GAME->dice[0] != -1) {
+    if (GAME->dublet) {
         w_mvwprintw(4, 6, "Podwójny ruch!");
     }
 
@@ -119,11 +119,14 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
 }
 
 int roll(struct GAME_T* GAME) {
+    GAME->dublet = FALSE;
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
+
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
         GAME->dice[3] = GAME->dice[0];
+        GAME->dublet = TRUE;
         paint_DICE(GAME->ui_2.window, GAME);
         return 4;
     } else {
@@ -168,7 +171,7 @@ void comms(WINDOW* window, char* str, int kolor, int gracz) {
     char prefix[] = "You have to";
     watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s %s!",
                                            kolor == RED ? prefix : "\b", str););
-          atrrCLR(gracz == 1 ? MAGENTA : CYAN,
+          atrrCLR(gracz == 1 ? CLR_PLAYER_A : CLR_PLAYER_B,
                   mvwprintw(window, 2, 2,
                             "Ruch-Gracza %s: ", gracz == 1 ? "A" : "B")););
     wrefresh(window);
@@ -211,12 +214,14 @@ void move_pionek(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
     if (gracz == PLAYER_A) {
         GAME->plansza.pole[pionek].liczba--;
         GAME->plansza.pole[pionek + GAME->dice[kostka - 1]].liczba++;
-        GAME->plansza.pole[pionek + GAME->dice[kostka - 1]].kolor = MAGENTA;
+        GAME->plansza.pole[pionek + GAME->dice[kostka - 1]].kolor =
+            CLR_PLAYER_A;
 
     } else {
         GAME->plansza.pole[pionek].liczba--;
         GAME->plansza.pole[pionek - GAME->dice[kostka - 1]].liczba++;
-        GAME->plansza.pole[pionek - GAME->dice[kostka - 1]].kolor = CYAN;
+        GAME->plansza.pole[pionek - GAME->dice[kostka - 1]].kolor =
+            CLR_PLAYER_B;
     }
     GAME->dice[kostka - 1] = 0;
     paint_DICE(GAME->ui_2.window, GAME);
@@ -227,6 +232,25 @@ int verify_forced_move(struct GAME_T* GAME, int gracz) {
     // check_bar(GAME, gracz); // return 1 if forced move
     // check_zbicie(GAME, gracz); // return 1 if forced move
     // check_dwor(GAME, gracz); // return 1 if forced move
+    return 0;
+}
+int verify_move(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
+    int docelowePole = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
+                                                   : -GAME->dice[kostka - 1]);
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+    if (GAME->plansza.pole[pionek].kolor != kolor) {
+        comms(GAME->controls.window, "choose your field", RED, gracz);
+        return 1;
+    }
+    if (GAME->plansza.pole[pionek].liczba == 0) {
+        comms(GAME->controls.window, "choose field with pieces", RED, gracz);
+        return 1;
+    }
+    if (GAME->plansza.pole[docelowePole].kolor != kolor &&
+        GAME->plansza.pole[docelowePole].liczba > 1) {
+        comms(GAME->controls.window, "choose conquerable field", RED, gracz);
+        return 1;
+    }
     return 0;
 }
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
@@ -243,8 +267,10 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     clearLine(3);
     int kostka = get_dice(window, GAME, gracz);
 
-    // if (verify_move(GAME, pionek, kostka, gracz))
-    //     return move_action(window, GAME, gracz);
+    while (verify_move(GAME, pionek, kostka, gracz)) {
+        getch();
+        return move_action(window, GAME, gracz);
+    }
 
     char kostki[50];
     sprintf(kostki, "Ruszyłeś pionka z pola %d na pole %d", pionek,
@@ -281,11 +307,10 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     save_turn(GAME, ruchy);
 }
 void gameplay(struct GAME_T* GAME, int gracz) {
-    GAME->status = PLAYING;
     paint_DICE(GAME->ui_2.window, GAME);
     // while (1) {
     //     if (gracz == PLAYER_A) {
-    turn(GAME->controls.window, GAME, PLAYER_B);
+    turn(GAME->controls.window, GAME, PLAYER_A);
     //         check_win(GAME);
     //         turn(GAME->controls.window, GAME, PLAYER_B);
     //         check_win(GAME);
@@ -379,9 +404,10 @@ void run(struct GAME_T* GAME) {
 void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, MAGENTA},  {6, 5, CYAN},  {8, 3, CYAN},
-                  {12, 5, MAGENTA}, {13, 5, CYAN}, {17, 3, MAGENTA},
-                  {19, 5, MAGENTA}, {24, 2, CYAN}};
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+                  {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
+                  {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
+                  {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
         GAME->plansza.pole[pionki[i].index].liczba = pionki[i].liczba;
@@ -390,7 +416,8 @@ void placePionki(struct GAME_T* GAME) {
 }
 
 void initGame(struct GAME_T* GAME) {
-    GAME->status = STARTED;
+    GAME->rand_seed = time(NULL);
+    srand(GAME->rand_seed);
     GAME->save = fopen("savedGame.txt", "w");
 
     for (int i = 1; i < POLE_COUNT + 1; i++) {

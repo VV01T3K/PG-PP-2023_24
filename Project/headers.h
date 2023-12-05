@@ -1,6 +1,6 @@
 // fun.c
 void colorInit();
-char initialInit(struct GAME_T* GAME);
+char initialInit();
 void initWindows(struct GAME_T* GAME);
 
 // paint.c

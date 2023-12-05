@@ -57,7 +57,7 @@ void paint_BAR_A(int x, int y, WINDOW* window, struct BAR_T bar) {
             mvwprintw(window, y + PIONKI_HEIGHT - i, x, "+%d", bar.gracz_A - i);
             break;
         }
-        atrrCLR(MAGENTA,
+        atrrCLR(CLR_PLAYER_A,
                 mvwprintw(window, y + PIONKI_HEIGHT - i, x + 1, "%s", PIONEK));
     }
 }
@@ -69,7 +69,7 @@ void paint_BAR_B(int x, int y, WINDOW* window, struct BAR_T bar) {
                       "+%d", bar.gracz_B - i);
             break;
         }
-        atrrCLR(CYAN,
+        atrrCLR(CLR_PLAYER_B,
                 mvwprintw(window, y + BOARD_HEIGHT - PIONKI_HEIGHT - 1 + i,
                           x + 1, "%s", PIONEK));
     }
@@ -88,10 +88,11 @@ void paint_DWOR(int x, int y, WINDOW* window, struct DWOR_T dwor) {
         mvwprintw(window, y + i, x, "%s   %s", LINE, LINE);
     }
     for (i = 0, j = 0; i < dwor.gracz_A; i++, i % 3 == 0 ? j++ : j) {
-        atrrCLR(CYAN, mvwprintw(window, y + j, x + i % 3 + 1, "%s", PIONEK));
+        atrrCLR(CLR_PLAYER_B,
+                mvwprintw(window, y + j, x + i % 3 + 1, "%s", PIONEK));
     }
     for (i = 0, j = 0; i < dwor.gracz_B; i++, i % 3 == 0 ? j++ : j) {
-        atrrCLR(MAGENTA, mvwprintw(window, y + BOARD_HEIGHT - j - 1,
-                                   x + i % 3 + 1, "%s", PIONEK));
+        atrrCLR(CLR_PLAYER_A, mvwprintw(window, y + BOARD_HEIGHT - j - 1,
+                                        x + i % 3 + 1, "%s", PIONEK));
     }
 }
