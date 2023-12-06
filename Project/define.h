@@ -6,6 +6,8 @@
 #define MAX_NAME 20
 #define MAX_BAR 6
 #define POLE_COUNT 24
+#define MAX_LONG_STR 200
+#define MAX_SHORT_STR 20
 
 #define PLAYER_A 1
 #define PLAYER_B 2
@@ -130,9 +132,9 @@ struct GAME_T {
     struct UI_T ui_2;
     struct UI_T menu;
     int dice[4];
-    char komunikat[200];
+    char komunikat[MAX_LONG_STR];
     int rand_seed;
-    FILE* save;
     int dublet;
     int pozostałe_ruchy;
+    char ruchy[MAX_LONG_STR];
 };
