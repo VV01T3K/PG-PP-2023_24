@@ -597,12 +597,12 @@ int who_starts(struct GAME_T* GAME) {
 }
 
 void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     if (GAME->plansza.pole[cel].kolor != 0 &&
-        GAME->plansza.pole[cel].kolor != gracz) {
+        GAME->plansza.pole[cel].kolor != kolor) {
         capture(GAME, cel, gracz);
     }
-    GAME->plansza.pole[cel].kolor =
-        gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+    GAME->plansza.pole[cel].kolor = kolor;
 
     GAME->plansza.pole[cel].liczba++;
     GAME->plansza.pole[start].liczba--;
@@ -612,13 +612,16 @@ void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
 int load_save(struct GAME_T* GAME) {
     FILE* file = fopen("save.txt", "r");
     char buffer[2][3], c;
-    fscanf(file, "SEED: %d\n", &GAME->rand_seed);
-    fscanf(file, "->%c", &c);
-    int gracz = c == 'A' ? PLAYER_A : PLAYER_B;
+    fscanf(file, "SEED: %d", &GAME->rand_seed);
+    int gracz = 0;
     while (fscanf(file, "%c", &c) != EOF) {
         if (c == '\n') {
             fscanf(file, "->%c", &c);
-            gracz = c == 'A' ? PLAYER_A : PLAYER_B;
+            if (c == 'A') {
+                gracz = PLAYER_A;
+            } else if (c == 'B') {
+                gracz = PLAYER_B;
+            }
         }
         if (c == 'm') {
             int pionek, cel;
@@ -629,6 +632,7 @@ int load_save(struct GAME_T* GAME) {
         }
     }
     fclose(file);
+    return gracz == PLAYER_A ? PLAYER_B : PLAYER_A;
 }
 void run(struct GAME_T* GAME) {
     int gracz;
@@ -651,9 +655,8 @@ void run(struct GAME_T* GAME) {
         case 2:
             paint_GAMEVIEW(GAME);
             initGame(GAME);
-            load_save(GAME);
-            pause();
-            // gameplay(GAME, gracz);
+            gracz = load_save(GAME);
+            gameplay(GAME, gracz);
             break;
         case 3:
             paint_STATE(GAME->aside.window, GAME);
