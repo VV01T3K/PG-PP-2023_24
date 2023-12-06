@@ -10,19 +10,14 @@
 
 void save_game(struct GAME_T* GAME, int gracz) {
     FILE* file = fopen("save.txt", "w");
-    fprintf(file, "Zaczyna: %d | SEED: %d\n", gracz, GAME->rand_seed);
+    fprintf(file, "SEED: %d\n", GAME->rand_seed);
     fclose(file);
 }
-void save_turn(struct GAME_T* GAME, char* ruchy) {
+void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
     FILE* file = fopen("save.txt", "a");
-    fprintf(file, "->%s\n", ruchy);
+    fprintf(file, "->%c%s\n", gracz, ruchy);
     fclose(file);
 }
-// ruch_add_num(struct GAME_T* GAME, int num) {
-//     char num_str[MAX_SHORT_STR];
-//     sprintf(num_str, " %d", num);
-//     strcat(GAME->ruchy, num_str);
-// }
 
 void capture(struct GAME_T* GAME, int docelowe, int gracz);
 void initGame(struct GAME_T* GAME);
@@ -230,24 +225,24 @@ int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz) {
 }
 void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     int pionek = move.pionek, kostka = move.kostka;
+    int cel = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
+                                          : -GAME->dice[kostka - 1]);
     if (gracz == PLAYER_A) {
         GAME->plansza.pole[pionek].liczba--;
-        GAME->plansza.pole[pionek + GAME->dice[kostka - 1]].liczba++;
-        GAME->plansza.pole[pionek + GAME->dice[kostka - 1]].kolor =
-            CLR_PLAYER_A;
+        GAME->plansza.pole[cel].liczba++;
+        GAME->plansza.pole[cel].kolor = CLR_PLAYER_A;
 
     } else {
         GAME->plansza.pole[pionek].liczba--;
-        GAME->plansza.pole[pionek - GAME->dice[kostka - 1]].liczba++;
-        GAME->plansza.pole[pionek - GAME->dice[kostka - 1]].kolor =
-            CLR_PLAYER_B;
+        GAME->plansza.pole[cel].liczba++;
+        GAME->plansza.pole[cel].kolor = CLR_PLAYER_B;
     }
     GAME->dice[kostka - 1] = 0;
     paint_DICE(GAME->ui_2.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
     GAME->pozostałe_ruchy--;
-    char buffer[10];
-    sprintf(buffer, " m %d %d", pionek, kostka);
+    char buffer[20];
+    sprintf(buffer, " m %d %d", pionek, cel);
     strcat(GAME->ruchy, buffer);
 }
 
@@ -532,7 +527,6 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     while (decide_controls(window, GAME) != 'r') {
         comms(window, "roll dice first", RED, gracz);
     }
-    strcat(GAME->ruchy, " r");
     GAME->pozostałe_ruchy = roll(GAME);
     while (GAME->pozostałe_ruchy > 0) {
         comms(window, "You can move now", GREEN, gracz);
@@ -545,16 +539,16 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     while (decide_controls(window, GAME) != 's') {
         comms(window, "skip", RED, gracz);
     }
-    strcat(GAME->ruchy, " s");
 }
 void gameplay(struct GAME_T* GAME, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
     while (1) {
         if (gracz == PLAYER_A) {
             turn(GAME->controls.window, GAME, PLAYER_A);
-            save_turn(GAME, GAME->ruchy);
+            save_turn(GAME, GAME->ruchy, 'A');
             // check_win(GAME);
             turn(GAME->controls.window, GAME, PLAYER_B);
+            save_turn(GAME, GAME->ruchy, 'B');
             // check_win(GAME);
         } else {
             turn(GAME->controls.window, GAME, PLAYER_B);
@@ -602,7 +596,42 @@ int who_starts(struct GAME_T* GAME) {
     }
 }
 
+void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
+    if (GAME->plansza.pole[cel].kolor != 0 &&
+        GAME->plansza.pole[cel].kolor != gracz) {
+        capture(GAME, cel, gracz);
+    }
+    GAME->plansza.pole[cel].kolor =
+        gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+
+    GAME->plansza.pole[cel].liczba++;
+    GAME->plansza.pole[start].liczba--;
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+}
+
+int load_save(struct GAME_T* GAME) {
+    FILE* file = fopen("save.txt", "r");
+    char buffer[2][3], c;
+    fscanf(file, "SEED: %d\n", &GAME->rand_seed);
+    fscanf(file, "->%c", &c);
+    int gracz = c == 'A' ? PLAYER_A : PLAYER_B;
+    while (fscanf(file, "%c", &c) != EOF) {
+        if (c == '\n') {
+            fscanf(file, "->%c", &c);
+            gracz = c == 'A' ? PLAYER_A : PLAYER_B;
+        }
+        if (c == 'm') {
+            int pionek, cel;
+            fscanf(file, "%s %s", buffer[0], buffer[1]);
+            pionek = atoi(buffer[0]);
+            cel = atoi(buffer[1]);
+            crud_move_pionek(GAME, pionek, cel, gracz);
+        }
+    }
+    fclose(file);
+}
 void run(struct GAME_T* GAME) {
+    int gracz;
     paint_HALL(GAME->aside.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
 
@@ -612,7 +641,7 @@ void run(struct GAME_T* GAME) {
         case 1:
             paint_GAMEVIEW(GAME);
             // int gracz = who_starts(GAME);
-            int gracz = PLAYER_A;
+            gracz = PLAYER_A;
             initGame(GAME);
             save_game(GAME, gracz);
             gameplay(GAME, gracz);
@@ -620,9 +649,11 @@ void run(struct GAME_T* GAME) {
             run(GAME);  // powrót do menu
             break;
         case 2:
-            // load_save(GAME);
-            // paint_GAMEVIEW(GAME);
-            // gameplay(GAME, PLAYER_B);
+            paint_GAMEVIEW(GAME);
+            initGame(GAME);
+            load_save(GAME);
+            pause();
+            // gameplay(GAME, gracz);
             break;
         case 3:
             paint_STATE(GAME->aside.window, GAME);
