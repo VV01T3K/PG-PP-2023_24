@@ -17,5 +17,7 @@ gcc -o .game index.c fun.c paint.c $(ncursesw6-config --cflags --libs) && ./.gam
 sudo update-locale LANG=en_US.UTF-8 LANGUAGE=en.UTF-8
 
 
-- [+] paint_BAR too long ??
-- [] paint_DWOR too long ??
+1. Compile your program with debugging symbols: gcc -g your_program.c -o your_program
+2. Run it in the debugger: gdb your_program
+3. In the gdb console, run your program by typing run. The program will stop if it hits a segfault.
+4. To find out where it crashed, type backtrace. This will give you the function call stack, showing you exactly where the crash happened.
