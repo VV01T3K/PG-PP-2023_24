@@ -76,7 +76,7 @@ void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     printDICE(window, 3, 16, GAME, 3);
 
     if (GAME->dublet) {
-        w_mvwprintw(4, 6, "Podwójny ruch!");
+        w_mvwprintw(4, 6, "Dublet!");
     }
 
     wrefresh(window);
@@ -228,7 +228,8 @@ int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz) {
     if (ch != '\n') return get_dice(window, GAME, gracz);
     return result;
 }
-void move_pionek(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
+void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+    int pionek = move.pionek, kostka = move.kostka;
     if (gracz == PLAYER_A) {
         GAME->plansza.pole[pionek].liczba--;
         GAME->plansza.pole[pionek + GAME->dice[kostka - 1]].liczba++;
@@ -257,7 +258,8 @@ void capture(struct GAME_T* GAME, int docelowe, int gracz) {
     }
     GAME->plansza.pole[docelowe].liczba = 0;
 }
-int verify_move(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
+int verify_move(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+    int pionek = move.pionek, kostka = move.kostka;
     int docelowe = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
                                                : -GAME->dice[kostka - 1]);
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
@@ -278,7 +280,7 @@ int verify_move(struct GAME_T* GAME, int pionek, int kostka, int gracz) {
         GAME->plansza.pole[docelowe].liczba == 1) {
         capture(GAME, docelowe, gracz);
         comms(GAME->controls.window, "Ładne bicie", GREEN, gracz);
-        pause()
+        pause();
     }
     return 0;
 }
@@ -294,45 +296,135 @@ int bar_empty(struct GAME_T* GAME, int gracz) {
         }
     }
     comms(GAME->controls.window, "move your pieces from bar first", RED, gracz);
-    pause() return 0;
+    pause();
+    return 0;
+}
+
+int asc_dice(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
+int desc_dice(const void* a, const void* b) { return (*(int*)b - *(int*)a); }
+
+struct MOVE_T check_A_capture(struct GAME_T* GAME, int kolor, int kostki[4]) {
+    struct MOVE_T move;
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        for (int j = 0; j < POLE_COUNT + 1; j++) {
+            if (GAME->plansza.pole[j].kolor == kolor &&
+                GAME->plansza.pole[j].liczba > 0) {
+                int docelowe = j + kostki[i];
+                if (docelowe < 1 || docelowe > 24) continue;
+                if (GAME->plansza.pole[docelowe].kolor != kolor &&
+                    GAME->plansza.pole[docelowe].liczba == 1) {
+                    move.kostka = i + 1;
+                    move.pionek = j;
+                    return move;
+                }
+            }
+        }
+    }
+    move.kostka = -1;
+    move.pionek = -1;
+    return move;
+}
+
+struct MOVE_T check_B_capture(struct GAME_T* GAME, int kolor, int kostki[4]) {
+    struct MOVE_T move;
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        for (int j = POLE_COUNT; j > 0; j--) {
+            if (GAME->plansza.pole[j].kolor == kolor &&
+                GAME->plansza.pole[j].liczba > 0) {
+                int docelowe = j - kostki[i];
+                if (docelowe < 1 || docelowe > 24) continue;
+                if (GAME->plansza.pole[docelowe].kolor != kolor &&
+                    GAME->plansza.pole[docelowe].liczba == 1) {
+                    move.kostka = i + 1;
+                    move.pionek = j;
+                    return move;
+                }
+            }
+        }
+    }
+    move.kostka = -1;
+    move.pionek = -1;
+    return move;
+}
+
+int capture_possible(struct GAME_T* GAME, int gracz) {
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+
+    int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
+                     GAME->dice[3]};
+
+    qsort(kostki, 4, sizeof(int), asc_dice);
+
+    if (gracz == PLAYER_A) {
+        if (check_A_capture(GAME, kolor, kostki).kostka != -1) {
+            return 1;
+        }
+        return 0;
+
+    } else {
+        if (check_B_capture(GAME, kolor, kostki).kostka != -1) {
+            return 1;
+        }
+        return 0;
+    }
 }
 
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    int pionek = gracz == PLAYER_A ? 0 : 25;
+    struct MOVE_T move;
+
+    move.pionek = gracz == PLAYER_A ? 0 : 25;
+    move.kostka = 0;
+
+    if (capture_possible(GAME, gracz)) {
+        move = gracz == PLAYER_A
+                   ? check_A_capture(GAME, CLR_PLAYER_A, GAME->dice)
+                   : check_B_capture(GAME, CLR_PLAYER_B, GAME->dice);
+        char kostki[50];
+        sprintf(kostki, "capture from field %d with dice %d", move.pionek,
+                move.kostka);
+        comms(window, kostki, RED, gracz);
+        pause();
+        move_pionek(GAME, move, gracz);
+    }
+
     if (bar_empty(GAME, gracz)) {
         comms(window, "Wybierz pionek", GREEN, gracz);
         w_mvwprintw(3, 4, "Choose number from 1 to 24");
         clearLine(3);
-        pionek = get_number(window, GAME, gracz);
+        move.pionek = get_number(window, GAME, gracz);
     }
-
-    char pionek_str[12];
-    sprintf(pionek_str, " %d", pionek);
-    strcat(GAME->ruchy, pionek_str);
 
     comms(window, "Wybierz kostke", GREEN, gracz);
     w_mvwprintw(3, 4, "Choose number of dice from bottom right panel");
     clearLine(3);
-    int kostka = get_dice(window, GAME, gracz);
+    move.kostka = get_dice(window, GAME, gracz);
 
-    if (verify_move(GAME, pionek, kostka, gracz)) {
-        pause() return move_action(window, GAME, gracz);
+    if (verify_move(GAME, move, gracz)) {
+        pause();
+        return move_action(window, GAME, gracz);
     }
 
+    // start komunikat o ruchu
     char kostki[50];
-    if (pionek == 0 | pionek == 25) {
-        sprintf(kostki, "Ruszyłeś pionka z bandy na pole %d",
-                pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
-                                            : -GAME->dice[kostka - 1]));
+    if (move.pionek == 0 | move.pionek == 25) {
+        sprintf(
+            kostki, "Ruszyłeś pionka z bandy na pole %d",
+            move.pionek + (gracz == PLAYER_A ? GAME->dice[move.kostka - 1]
+                                             : -GAME->dice[move.kostka - 1]));
     } else {
-        sprintf(kostki, "Ruszyłeś pionka z pola %d na pole %d", pionek,
-                pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
-                                            : -GAME->dice[kostka - 1]));
+        sprintf(
+            kostki, "Ruszyłeś pionka z pola %d na pole %d", move.pionek,
+            move.pionek + (gracz == PLAYER_A ? GAME->dice[move.kostka - 1]
+                                             : -GAME->dice[move.kostka - 1]));
     }
-    comms(window, kostki, GREEN, gracz);
 
-    move_pionek(GAME, pionek, kostka, gracz);
-    pause()
+    comms(window, kostki, GREEN, gracz);
+    // end komunikat o ruchu
+
+    move_pionek(GAME, move, gracz);
+    pause();
 }
 
 void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
@@ -397,14 +489,17 @@ int who_starts(struct GAME_T* GAME) {
     if (GAME->dice[0] > GAME->dice[1]) {
         comms(window, "Player A starts (Press Any key to continue)", GREEN,
               PLAYER_A);
-        pause() return PLAYER_A;
+        pause();
+        return PLAYER_A;
     } else if (GAME->dice[0] < GAME->dice[1]) {
         comms(window, "Player B starts (Press Any key to continue)", GREEN,
               PLAYER_B);
-        pause() return PLAYER_B;
+        pause();
+        return PLAYER_B;
     } else {
         comms(window, "Roll again", GREEN, PLAYER_A);
-        pause() return who_starts(GAME);
+        pause();
+        return who_starts(GAME);
     }
 }
 
@@ -467,8 +562,8 @@ void initGame(struct GAME_T* GAME) {
         GAME->plansza.pole[i].number = i;
     }
     placePionki(GAME);
-    BAR_PLAYER_A.liczba = 5;
-    BAR_PLAYER_B.liczba = 5;
+    BAR_PLAYER_A.liczba = 2;
+    BAR_PLAYER_B.liczba = 3;
 
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
@@ -501,6 +596,7 @@ int main() {
         initGame(GAME);
         run(GAME);
     }
-    pause() endwin();
+    pause();
+    endwin();
     return 0;
 }

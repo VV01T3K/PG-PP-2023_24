@@ -93,6 +93,7 @@
     w_mvwprintw(y, 0, "│");
 
 #define pause() \
+    ;           \
     noecho();   \
     getch();    \
     echo();
@@ -139,4 +140,9 @@ struct GAME_T {
     int dublet;
     int pozostałe_ruchy;
     char ruchy[MAX_LONG_STR];
+};
+
+struct MOVE_T {
+    int kostka;
+    int pionek;
 };
