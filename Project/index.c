@@ -133,10 +133,8 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
 
 int roll(struct GAME_T* GAME) {
     GAME->dublet = FALSE;
-    // GAME->dice[0] = rand() % 6 + 1;
-    // GAME->dice[1] = rand() % 6 + 1;
-    GAME->dice[0] = 6;
-    GAME->dice[1] = 0;
+    GAME->dice[0] = rand() % 6 + 1;
+    GAME->dice[1] = rand() % 6 + 1;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -248,6 +246,9 @@ void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
     GAME->pozostałe_ruchy--;
+    char buffer[10];
+    sprintf(buffer, " m %d %d", pionek, kostka);
+    strcat(GAME->ruchy, buffer);
 }
 
 void capture(struct GAME_T* GAME, int docelowe, int gracz) {
@@ -396,8 +397,9 @@ int check_A_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
                 GAME->plansza.pole[j].liczba > 0) {
                 int docelowe = j + kostki[i];
                 if (docelowe < 1 || docelowe > 24) continue;
-                if (GAME->plansza.pole[docelowe].kolor != kolor &&
-                    GAME->plansza.pole[docelowe].liczba == 1) {
+                if (GAME->plansza.pole[docelowe].kolor == kolor) {
+                    return 1;
+                } else if (GAME->plansza.pole[docelowe].liczba < 2) {
                     return 1;
                 }
             }
@@ -414,8 +416,9 @@ int check_B_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
                 GAME->plansza.pole[j].liczba > 0) {
                 int docelowe = j - kostki[i];
                 if (docelowe < 1 || docelowe > 24) continue;
-                if (GAME->plansza.pole[docelowe].kolor != kolor &&
-                    GAME->plansza.pole[docelowe].liczba == 1) {
+                if (GAME->plansza.pole[docelowe].kolor == kolor) {
+                    return 1;
+                } else if (GAME->plansza.pole[docelowe].liczba < 2) {
                     return 1;
                 }
             }
@@ -536,7 +539,6 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
         while (decide_controls(window, GAME) != 'm') {
             comms(window, "move", RED, gracz);
         }
-        strcat(GAME->ruchy, " m");
         move_action(window, GAME, gracz);
     }
     comms(window, "You can skip now", GREEN, gracz);
@@ -550,6 +552,7 @@ void gameplay(struct GAME_T* GAME, int gracz) {
     while (1) {
         if (gracz == PLAYER_A) {
             turn(GAME->controls.window, GAME, PLAYER_A);
+            save_turn(GAME, GAME->ruchy);
             // check_win(GAME);
             turn(GAME->controls.window, GAME, PLAYER_B);
             // check_win(GAME);
@@ -637,7 +640,7 @@ void run(struct GAME_T* GAME) {
 void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 1, CLR_PLAYER_B},  // 5 -> 3
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
                   {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
                   {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
                   {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
@@ -658,8 +661,8 @@ void initGame(struct GAME_T* GAME) {
         GAME->plansza.pole[i].number = i;
     }
     placePionki(GAME);
-    BAR_PLAYER_A.liczba = 2;
-    BAR_PLAYER_B.liczba = 3;
+    BAR_PLAYER_A.liczba = 0;
+    BAR_PLAYER_B.liczba = 0;
 
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
