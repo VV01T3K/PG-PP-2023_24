@@ -637,7 +637,7 @@ void run(struct GAME_T* GAME) {
 void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 3, CLR_PLAYER_B},  // 5 -> 3
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 1, CLR_PLAYER_B},  // 5 -> 3
                   {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
                   {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
                   {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
