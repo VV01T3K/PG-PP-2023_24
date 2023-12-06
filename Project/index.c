@@ -136,7 +136,7 @@ int roll(struct GAME_T* GAME) {
     // GAME->dice[0] = rand() % 6 + 1;
     // GAME->dice[1] = rand() % 6 + 1;
     GAME->dice[0] = 6;
-    GAME->dice[1] = 5;
+    GAME->dice[1] = 0;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -376,14 +376,63 @@ int enforce_move(struct MOVE_T forced, struct MOVE_T move, int bar_flag,
     if (capture_flag) {
         if (move.kostka != forced.kostka) {
             comms(GAME->controls.window, "wrong dice", RED, gracz);
+            pause();
             return 1;
         }
         if (move.pionek != forced.pionek) {
             comms(GAME->controls.window, "wrong field", RED, gracz);
+            pause();
             return 1;
         }
     }
     return 0;
+}
+
+int check_A_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        for (int j = 0; j < POLE_COUNT + 1; j++) {
+            if (GAME->plansza.pole[j].kolor == kolor &&
+                GAME->plansza.pole[j].liczba > 0) {
+                int docelowe = j + kostki[i];
+                if (docelowe < 1 || docelowe > 24) continue;
+                if (GAME->plansza.pole[docelowe].kolor != kolor &&
+                    GAME->plansza.pole[docelowe].liczba == 1) {
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int check_B_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        for (int j = POLE_COUNT; j > 0; j--) {
+            if (GAME->plansza.pole[j].kolor == kolor &&
+                GAME->plansza.pole[j].liczba > 0) {
+                int docelowe = j - kostki[i];
+                if (docelowe < 1 || docelowe > 24) continue;
+                if (GAME->plansza.pole[docelowe].kolor != kolor &&
+                    GAME->plansza.pole[docelowe].liczba == 1) {
+                    return 1;
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+int move_possible(struct GAME_T* GAME, int gracz) {
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+    int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
+                     GAME->dice[3]};
+
+    if (gracz == PLAYER_A)
+        return check_A_moves(GAME, kolor, kostki);
+    else
+        return check_B_moves(GAME, kolor, kostki);
 }
 
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
@@ -391,6 +440,13 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     struct MOVE_T move, forced;
     int bar_flag = 0, capture_flag = 0;
     forced.kostka = -1;
+
+    if (!move_possible(GAME, gracz)) {
+        comms(window, "skip (no legal moves) [ANY]", RED, gracz);
+        pause();
+        GAME->pozostałe_ruchy = 0;
+        return;
+    }
     // bar
     if (!bar_empty(GAME, gracz)) {
         forced.pionek = gracz == PLAYER_A ? 0 : 25;
@@ -581,7 +637,7 @@ void run(struct GAME_T* GAME) {
 void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 1, CLR_PLAYER_B},  // 5 -> 1
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 3, CLR_PLAYER_B},  // 5 -> 3
                   {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
                   {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
                   {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
