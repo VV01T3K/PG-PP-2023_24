@@ -12,6 +12,9 @@
 #define PLAYER_A 1
 #define PLAYER_B 2
 
+#define BAR_PLAYER_A GAME->plansza.pole[0]
+#define BAR_PLAYER_B GAME->plansza.pole[25]
+
 #define CLR_PLAYER_A MAGENTA
 #define CLR_PLAYER_B CYAN
 
@@ -89,6 +92,11 @@
     wrefresh(window);                         \
     w_mvwprintw(y, 0, "│");
 
+#define pause() \
+    noecho();   \
+    getch();    \
+    echo();
+
 // Struktury
 struct POLE_T {
     int liczba;  // 0 - brak, 1-15 - ilość pionków
@@ -96,20 +104,14 @@ struct POLE_T {
     int xyPos;   // default specifing position on window
     int number;  // number of pole
 };
-struct BAR_T {
-    int gracz_A;  // 0 - brak, 1-15 - ilość pionków
-    int gracz_B;  // 0 - brak, 1-15 - ilość pionków
-};
 struct DWOR_T {
     int gracz_A;  // 0 - brak, 1-15 - ilość pionków
     int gracz_B;  // 0 - brak, 1-15 - ilość pionków
 };
 struct PLANSZA_T {
     WINDOW* window;
-    struct POLE_T pole[POLE_COUNT + 1];
-    struct BAR_T bar;
+    struct POLE_T pole[POLE_COUNT + 2];
     struct DWOR_T dwor;
-    // struct KOSTKA_T kostka;
 };
 struct GRACZ_T {
     char nazwa[MAX_NAME];

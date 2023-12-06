@@ -8,7 +8,7 @@ void paint_BOARD(WINDOW* window, struct GAME_T* GAME, int pad) {
     int i, mv;
     for (i = 0, mv = 0; i < BOARD_HEIGHT - 1; i++) {
         if (i == 6) {
-            paint_BAR((3 * i) + (pad * 2), pad, window, GAME->plansza.bar);
+            paint_BAR((3 * i) + (pad * 2), pad, window, GAME);
             mv += 5;
         }
         paint_POLE_TOP(3 * i + mv, pad, (i % 2 ? YELLOW : RED), window,
@@ -50,23 +50,24 @@ void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window,
     }
     if (tmp > 0) mvwprintw(window, y - 1, x - 1, "+%d", tmp);
 }
-void paint_BAR_A(int x, int y, WINDOW* window, struct BAR_T bar) {
-    int i, tmp_A = bar.gracz_A;
-    for (i = 0; i < bar.gracz_A; i++) {
+void paint_BAR_A(int x, int y, WINDOW* window, struct GAME_T* GAME) {
+    int i, tmp_A = BAR_PLAYER_A.liczba;
+    for (i = 0; i < BAR_PLAYER_A.liczba; i++) {
         if (i >= MAX_BAR) {
-            mvwprintw(window, y + PIONKI_HEIGHT - i, x, "+%d", bar.gracz_A - i);
+            mvwprintw(window, y + PIONKI_HEIGHT - i, x, "+%d",
+                      BAR_PLAYER_A.liczba - i);
             break;
         }
         atrrCLR(CLR_PLAYER_A,
                 mvwprintw(window, y + PIONKI_HEIGHT - i, x + 1, "%s", PIONEK));
     }
 }
-void paint_BAR_B(int x, int y, WINDOW* window, struct BAR_T bar) {
-    int i, tmp_A = bar.gracz_B;
-    for (i = 0; i < bar.gracz_B; i++) {
+void paint_BAR_B(int x, int y, WINDOW* window, struct GAME_T* GAME) {
+    int i, tmp_A = BAR_PLAYER_B.liczba;
+    for (i = 0; i < BAR_PLAYER_B.liczba; i++) {
         if (i >= MAX_BAR) {
             mvwprintw(window, y + BOARD_HEIGHT - PIONKI_HEIGHT - 1 + i, x,
-                      "+%d", bar.gracz_B - i);
+                      "+%d", BAR_PLAYER_B.liczba - i);
             break;
         }
         atrrCLR(CLR_PLAYER_B,
@@ -74,12 +75,12 @@ void paint_BAR_B(int x, int y, WINDOW* window, struct BAR_T bar) {
                           x + 1, "%s", PIONEK));
     }
 }
-void paint_BAR(int x, int y, WINDOW* window, struct BAR_T bar) {
+void paint_BAR(int x, int y, WINDOW* window, struct GAME_T* GAME) {
     for (int i = 0; i < BOARD_HEIGHT; i++) {
         mvwprintw(window, y + i, x, "%s %s", LINE, LINE);
     }
-    paint_BAR_A(x, y, window, bar);
-    paint_BAR_B(x, y, window, bar);
+    paint_BAR_A(x, y, window, GAME);
+    paint_BAR_B(x, y, window, GAME);
 }
 
 void paint_DWOR(int x, int y, WINDOW* window, struct DWOR_T dwor) {
