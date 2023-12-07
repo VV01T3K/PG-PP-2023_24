@@ -669,11 +669,11 @@ int load_save(struct GAME_T* GAME) {
     int gracz = 0;
     while (fscanf(file, "%c", &c) != EOF) {
         // nadpisanie tekstu
-        if (c == 't') {
-            fseek(file, -1, SEEK_CUR);
-            fprintf(file, "Your text here1\n");
-            fprintf(file, "Your text here2\n");
-        }
+        // if (c == 't') {
+        //     fseek(file, -1, SEEK_CUR);
+        //     fprintf(file, "Your text here1\n");
+        //     fprintf(file, "Your text here2\n");
+        // }
         if (c == '\n') {
             fscanf(file, "->%c", &c);
             if (c == 'A') {
