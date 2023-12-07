@@ -11,6 +11,11 @@ void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
     fprintf(file, "->%c%s\n", gracz, ruchy);
     fclose(file);
 }
+void save_move(struct GAME_T* GAME, int start, int cel) {
+    char buffer[20];
+    sprintf(buffer, " m %d %d", start, cel);
+    strcat(GAME->ruchy, buffer);
+}
 
 void capture(struct GAME_T* GAME, int docelowe, int gracz);
 void initGame(struct GAME_T* GAME);
@@ -240,9 +245,7 @@ void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
     GAME->pozostałe_ruchy--;
-    char buffer[20];
-    sprintf(buffer, " m %d %d", pionek, cel);
-    strcat(GAME->ruchy, buffer);
+    save_move(GAME, pionek, cel);
 }
 
 void capture(struct GAME_T* GAME, int docelowe, int gracz) {
@@ -481,9 +484,7 @@ void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start) {
         verify_move(GAME, start, cel, gracz, MULTI_ON);
         GAME->dice[kostki[i] - 1] = 0;
         GAME->pozostałe_ruchy--;
-        char buffer[20];
-        sprintf(buffer, " m %d %d", prev, cel);
-        strcat(GAME->ruchy, buffer);
+        save_move(GAME, prev, cel);
     }
     paint_DICE(GAME->ui_2.window, GAME);
     crud_move_pionek(GAME, start, cel, gracz);
