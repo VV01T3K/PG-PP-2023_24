@@ -1,11 +1,3 @@
-#include <ctype.h>
-#include <ncurses.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-#include "define.h"
 #include "headers.h"
 
 void save_game(struct GAME_T* GAME, int gracz) {
@@ -60,7 +52,7 @@ void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) - 1, 1, "Kostki");
 
     if (GAME->dice[0] == -1) {
-        w_mvwprintw(2, 6, "Rzuć kostkami!");
+        w_mvwprintw(2, 6, TXT_DICE_ROLL);
         wrefresh(window);
         return;
     }
@@ -82,7 +74,7 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(0, 1, "Menu"););
 
-    watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, "Backgammon─1.0"););
+    watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, TXT_GAME_NAME););
 
     w_mvwprintw(4, 3, "Choose from list: ");
     w_mvwprintw(5, 3, "( Enter x2 to confirm :v )");
@@ -113,7 +105,7 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
             exit(0);
             break;
         default:
-            w_wprintw("Wrong input!");
+            w_wprintw(TXT_WRONG);
             return decide_menu(window, GAME);
             break;
     }
@@ -164,7 +156,7 @@ int decide_controls(WINDOW* window, struct GAME_T* GAME) {
             run(GAME);
             break;
         default:
-            w_wprintw("Wrong input!");
+            w_wprintw(TXT_WRONG);
             return decide_controls(window, GAME);
             break;
     }
@@ -190,7 +182,7 @@ int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
     W_GETNSTR_IN(2, 2, controls_padd)
     int result = atoi(in);
     if (result < 1 || result > 24) {
-        w_wprintw("Wrong input!");
+        w_wprintw(TXT_WRONG);
         return get_number(window, GAME, gracz);
     }
     wprintw(window, "Pole Nr %d", result);
@@ -207,16 +199,16 @@ int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz) {
     W_GETNSTR_IN(1, 2, controls_padd)
     int result = atoi(in);
     if (result < 1 || result > (GAME->dice[3] != -1 ? 4 : 2)) {
-        w_wprintw("Wrong input!");
+        w_wprintw(TXT_WRONG);
         clearLine(2);
         return get_dice(window, GAME, gracz);
     }
     if (GAME->dice[result - 1] == 0) {
-        w_wprintw("Dice already used!");
+        w_wprintw(TXT_DICE_USED);
         return get_dice(window, GAME, gracz);
     }
 
-    wprintw(window, "Kostka Nr %d", result);
+    wprintw(window, TXT_DICE_NR, result);
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return get_dice(window, GAME, gracz);
@@ -262,22 +254,22 @@ int verify_move(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
                                                : -GAME->dice[kostka - 1]);
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     if (GAME->plansza.pole[pionek].kolor != kolor) {
-        comms(GAME->controls.window, "choose your field", RED, gracz);
+        comms(GAME->controls.window, TXT_VERIFY_1, RED, gracz);
         return 1;
     }
     if (GAME->plansza.pole[pionek].liczba == 0) {
-        comms(GAME->controls.window, "choose field with pieces", RED, gracz);
+        comms(GAME->controls.window, TXT_VERIFY_2, RED, gracz);
         return 1;
     }
     if (GAME->plansza.pole[docelowe].kolor != kolor &&
         GAME->plansza.pole[docelowe].liczba > 1) {
-        comms(GAME->controls.window, "choose conquerable field", RED, gracz);
+        comms(GAME->controls.window, TXT_VERIFY_3, RED, gracz);
         return 1;
     }
     if (GAME->plansza.pole[docelowe].kolor != kolor &&
         GAME->plansza.pole[docelowe].liczba == 1) {
         capture(GAME, docelowe, gracz);
-        comms(GAME->controls.window, "Ładne bicie", GREEN, gracz);
+        comms(GAME->controls.window, TXT_CAPTURE, GREEN, gracz);
         pause();
     }
     return 0;
@@ -440,7 +432,7 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     forced.kostka = -1;
 
     if (!move_possible(GAME, gracz)) {
-        comms(window, "skip (no legal moves) [ANY]", RED, gracz);
+        comms(window, TXT_MOVE_IMP, RED, gracz);
         pause();
         GAME->pozostałe_ruchy = 0;
         return;
@@ -450,7 +442,7 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
         forced.pionek = gracz == PLAYER_A ? 0 : 25;
         move.pionek = forced.pionek;
         bar_flag = 1;
-        comms(window, "move all pieces from bar! (ANY)", RED, gracz);
+        comms(window, TXT_BAR_FULL, RED, gracz);
         pause();
     }
     // end bar
@@ -468,7 +460,7 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
             forced.pionek = move.pionek;
             capture_flag = 1;
         }
-        comms(window, "capture! [ANY]", RED, gracz);
+        comms(window, TXT_CAP_POS, RED, gracz);
         pause();
     }
     // end capture
@@ -477,14 +469,14 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     move.kostka = -1;
     do {
         if (!bar_flag) {
-            comms(window, "Wybierz pionek", GREEN, gracz);
-            w_mvwprintw(3, 4, "Choose number from 1 to 24");
+            comms(window, TXT_M_PION, GREEN, gracz);
+            w_mvwprintw(3, 4, TXT_M_FIELD);
             clearLine(3);
             move.pionek = get_number(window, GAME, gracz);
         }
 
-        comms(window, "Wybierz kostke", GREEN, gracz);
-        w_mvwprintw(3, 4, "Choose number of dice from bottom right panel");
+        comms(window, TXT_M_DICE, GREEN, gracz);
+        w_mvwprintw(3, 4, TXT_M_DICE_INFO);
         clearLine(3);
 
         move.kostka = get_dice(window, GAME, gracz);
@@ -504,12 +496,12 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     // start komunikat o ruchu
     if (move.pionek == 0 | move.pionek == 25) {
         sprintf(
-            kostki, "Ruszyłeś pionka z bandy na pole %d",
+            kostki, TXT_POST_MOVE_BAR,
             move.pionek + (gracz == PLAYER_A ? GAME->dice[move.kostka - 1]
                                              : -GAME->dice[move.kostka - 1]));
     } else {
         sprintf(
-            kostki, "Ruszyłeś pionka z pola %d na pole %d", move.pionek,
+            kostki, TXT_POST_MOVE, move.pionek,
             move.pionek + (gracz == PLAYER_A ? GAME->dice[move.kostka - 1]
                                              : -GAME->dice[move.kostka - 1]));
     }
@@ -525,17 +517,17 @@ void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
     comms(window, GAME->komunikat, GREEN, gracz);
     wrefresh(window);
     while (decide_controls(window, GAME) != 'r') {
-        comms(window, "roll dice first", RED, gracz);
+        comms(window, TXT_DECIDE_R, RED, gracz);
     }
     GAME->pozostałe_ruchy = roll(GAME);
     while (GAME->pozostałe_ruchy > 0) {
-        comms(window, "You can move now", GREEN, gracz);
+        comms(window, TXT_DECIDE_M, GREEN, gracz);
         while (decide_controls(window, GAME) != 'm') {
             comms(window, "move", RED, gracz);
         }
         move_action(window, GAME, gracz);
     }
-    comms(window, "You can skip now", GREEN, gracz);
+    comms(window, TXT_DECIDE_S, GREEN, gracz);
     while (decide_controls(window, GAME) != 's') {
         comms(window, "skip", RED, gracz);
     }
@@ -566,10 +558,10 @@ void paint_GAMEVIEW(struct GAME_T* GAME) {
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 void starting_roll(struct GAME_T* GAME, WINDOW* window, int gracz) {
-    comms(window, "Roll to decide who starts", GREEN, gracz);
+    comms(window, TXT_START_ROLL, GREEN, gracz);
     wrefresh(window);
     while (decide_controls(window, GAME) != 'r') {
-        comms(window, "roll to decide who starts", RED, gracz);
+        comms(window, TXT_START_ROLL, RED, gracz);
     }
     GAME->dice[gracz - 1] = rand() % 6 + 1;
     paint_DICE(GAME->ui_2.window, GAME);
@@ -580,13 +572,11 @@ int who_starts(struct GAME_T* GAME) {
     starting_roll(GAME, window, PLAYER_A);
     starting_roll(GAME, window, PLAYER_B);
     if (GAME->dice[0] > GAME->dice[1]) {
-        comms(window, "Player A starts (Press Any key to continue)", GREEN,
-              PLAYER_A);
+        comms(window, TXT_START_PLAYER_A, GREEN, PLAYER_A);
         pause();
         return PLAYER_A;
     } else if (GAME->dice[0] < GAME->dice[1]) {
-        comms(window, "Player B starts (Press Any key to continue)", GREEN,
-              PLAYER_B);
+        comms(window, TXT_START_PLAYER_B, GREEN, PLAYER_B);
         pause();
         return PLAYER_B;
     } else {
@@ -610,11 +600,17 @@ void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
 }
 
 int load_save(struct GAME_T* GAME) {
-    FILE* file = fopen("save.txt", "r");
+    FILE* file = fopen("save.txt", "r+");
     char buffer[2][3], c;
     fscanf(file, "SEED: %d", &GAME->rand_seed);
     int gracz = 0;
     while (fscanf(file, "%c", &c) != EOF) {
+        // nadpisanie tekstu
+        if (c == 't') {
+            fseek(file, -1, SEEK_CUR);
+            fprintf(file, "Your text here1\n");
+            fprintf(file, "Your text here2\n");
+        }
         if (c == '\n') {
             fscanf(file, "->%c", &c);
             if (c == 'A') {
@@ -709,7 +705,7 @@ void initGame(struct GAME_T* GAME) {
     GAME->dice[2] = -1;
     GAME->dice[3] = -1;
 
-    strcpy(GAME->komunikat, "Good luck!");
+    strcpy(GAME->komunikat, TXT_TURN);
 
     GAME->gracz_A.wynik = 0;
     GAME->gracz_B.wynik = 0;
@@ -724,11 +720,12 @@ int main() {
     struct GAME_T* GAME = (struct GAME_T*)malloc(sizeof(struct GAME_T));
     if (GAME == NULL) return 1;
     if (initialInit(GAME)) {
-        printw("Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24");
+        printw(TXT_AUTHOR);
         initWindows(GAME);
         initGame(GAME);
         run(GAME);
     }
+    free(GAME);
     pause();
     endwin();
     return 0;

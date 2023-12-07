@@ -1,3 +1,13 @@
+#include <ctype.h>
+#include <locale.h>
+#include <ncurses.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "define.h"
+#include "text.h"
 // fun.c
 void colorInit();
 char initialInit();

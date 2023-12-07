@@ -1,9 +1,3 @@
-#include <locale.h>
-#include <ncurses.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "define.h"
 #include "headers.h"
 
 void colorInit() {
@@ -49,7 +43,7 @@ char initialInit() {
         start_color();
         colorInit();
     } else {
-        printw("Terminal nie obsługuje kolorów!");
+        printw(TXT_CLR_UNSUPPORTED);
         return FALSE;
     }
     return TRUE;
