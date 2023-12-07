@@ -11,6 +11,9 @@
 #define PLAYER_A 1
 #define PLAYER_B 2
 
+#define MULTI_ON 1
+#define MULTI_OFF 0
+
 #define BAR_PLAYER_A GAME->plansza.pole[0]
 #define BAR_PLAYER_B GAME->plansza.pole[25]
 
@@ -98,6 +101,9 @@
     noecho();   \
     getch();    \
     echo();
+
+#define gracz_step(index) \
+    (gracz == PLAYER_A ? GAME->dice[index] : -GAME->dice[index])
 
 // Struktury
 struct POLE_T {

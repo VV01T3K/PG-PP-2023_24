@@ -1,5 +1,6 @@
 #include "Partials/headers.h"
-
+void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz);
+void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start);
 void save_game(struct GAME_T* GAME, int gracz) {
     FILE* file = fopen(SAVE_PATH, "w");
     fprintf(file, "SEED: %d\n", GAME->rand_seed);
@@ -120,8 +121,10 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
 
 int roll(struct GAME_T* GAME) {
     GAME->dublet = FALSE;
-    GAME->dice[0] = rand() % 6 + 1;
-    GAME->dice[1] = rand() % 6 + 1;
+    // GAME->dice[0] = rand() % 6 + 1;
+    // GAME->dice[1] = rand() % 6 + 1;
+    GAME->dice[0] = 3;
+    GAME->dice[1] = 3;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -195,30 +198,34 @@ int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
     return result;
 }
 
-int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz) {
+int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz, int multi,
+             int start) {
     W_GETNSTR_IN(1, 2, CONTROLS_PADD)
+    if (in[0] == 'm' && multi == MULTI_ON) {
+        multi_move(window, GAME, gracz, start);
+        return -10;
+    }
     int result = atoi(in);
     if (result < 1 || result > (GAME->dice[3] != -1 ? 4 : 2)) {
         w_wprintw(TXT_WRONG);
         clearLine(2);
-        return get_dice(window, GAME, gracz);
+        return get_dice(window, GAME, gracz, multi, start);
     }
     if (GAME->dice[result - 1] == 0) {
         w_wprintw(TXT_DICE_USED);
-        return get_dice(window, GAME, gracz);
+        return get_dice(window, GAME, gracz, multi, start);
     }
 
     wprintw(window, TXT_DICE_NR, result);
     wrefresh(window);
     char ch = wgetch(window);
-    if (ch != '\n') return get_dice(window, GAME, gracz);
+    if (ch != '\n') return get_dice(window, GAME, gracz, multi, start);
     clearLine(2);
     return result;
 }
 void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     int pionek = move.pionek, kostka = move.kostka;
-    int cel = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
-                                          : -GAME->dice[kostka - 1]);
+    int cel = pionek + gracz_step(kostka - 1);
     if (gracz == PLAYER_A) {
         GAME->plansza.pole[pionek].liczba--;
         GAME->plansza.pole[cel].liczba++;
@@ -248,29 +255,29 @@ void capture(struct GAME_T* GAME, int docelowe, int gracz) {
     }
     GAME->plansza.pole[docelowe].liczba = 0;
 }
-int verify_move(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
-    int pionek = move.pionek, kostka = move.kostka;
-    int docelowe = pionek + (gracz == PLAYER_A ? GAME->dice[kostka - 1]
-                                               : -GAME->dice[kostka - 1]);
+int verify_move(struct GAME_T* GAME, int start, int cel, int gracz, int multi) {
+    WINDOW* win = GAME->controls.window;
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
-    if (GAME->plansza.pole[pionek].kolor != kolor) {
-        comms(GAME->controls.window, TXT_VERIFY_1, RED, gracz);
+    if (GAME->plansza.pole[start].kolor != kolor) {
+        comms(win, TXT_VERIFY_1, RED, gracz);
         return 1;
     }
-    if (GAME->plansza.pole[pionek].liczba == 0) {
-        comms(GAME->controls.window, TXT_VERIFY_2, RED, gracz);
+    if (GAME->plansza.pole[start].liczba == 0) {
+        comms(win, TXT_VERIFY_2, RED, gracz);
         return 1;
     }
-    if (GAME->plansza.pole[docelowe].kolor != kolor &&
-        GAME->plansza.pole[docelowe].liczba > 1) {
-        comms(GAME->controls.window, TXT_VERIFY_3, RED, gracz);
+    if (GAME->plansza.pole[cel].kolor != kolor &&
+        GAME->plansza.pole[cel].liczba > 1) {
+        comms(win, TXT_VERIFY_3, RED, gracz);
         return 1;
     }
-    if (GAME->plansza.pole[docelowe].kolor != kolor &&
-        GAME->plansza.pole[docelowe].liczba == 1) {
-        capture(GAME, docelowe, gracz);
-        comms(GAME->controls.window, TXT_CAPTURE, GREEN, gracz);
-        pause();
+    if (GAME->plansza.pole[cel].kolor != kolor &&
+        GAME->plansza.pole[cel].liczba == 1) {
+        if (multi == MULTI_OFF) {
+            capture(GAME, cel, gracz);
+            comms(win, TXT_CAPTURE, GREEN, gracz);
+            pause();
+        }
     }
     return 0;
 }
@@ -359,8 +366,8 @@ int capture_possible(struct GAME_T* GAME, int gracz) {
     }
 }
 
-int enforce_move(struct MOVE_T forced, struct MOVE_T move, int bar_flag,
-                 int capture_flag, int gracz, struct GAME_T* GAME) {
+int enforce_move(struct MOVE_T forced, struct MOVE_T move, int capture_flag,
+                 int gracz, struct GAME_T* GAME) {
     if (capture_flag) {
         if (move.kostka != forced.kostka) {
             comms(GAME->controls.window, "wrong dice", RED, gracz);
@@ -425,6 +432,63 @@ int move_possible(struct GAME_T* GAME, int gracz) {
         return check_B_moves(GAME, kolor, kostki);
 }
 
+void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start) {
+    comms(window, "CHOOSE DICES [np.: 2+1+3]", GREEN, gracz);
+    W_GETNSTR_IN(7, 2, CONTROLS_PADD);
+    int kostki[4] = {0};
+    char* split = strtok(in, "+");
+    int j, i = 0, return_flag = 0;
+
+    while (split != NULL) {
+        kostki[i++] = atoi(split);
+        split = strtok(NULL, "+");
+    }
+
+    for (i = 0; i < 4; i++) {
+        if (!kostki[i]) continue;
+
+        if (kostki[i] < 1 || kostki[i] > (GAME->dublet ? 4 : 2)) {
+            w_wprintw("WRONG DICE NUMBERS");
+            return_flag = 1;
+        }
+        if (GAME->dice[kostki[i] - 1] == 0) {
+            w_wprintw("DICE ALREADY USED");
+            return_flag = 1;
+        }
+        for (j = 0; j < 4; j++) {
+            if (i == j) continue;
+            if (kostki[i] == kostki[j]) {
+                w_wprintw("DICE USED TWICE");
+                return_flag = 1;
+                break;
+            }
+        }
+        if (return_flag) return multi_move(window, GAME, gracz, start);
+    }
+    int cel;
+    for (i = 0, cel = start; i < 4; i++) {
+        if (!kostki[i]) continue;
+        cel += gracz_step(kostki[i] - 1);
+        if (verify_move(GAME, start, cel, gracz, MULTI_OFF)) {
+            pause();
+            return multi_move(window, GAME, gracz, start);
+        }
+    }
+    for (i = 0, cel = start; i < 4; i++) {
+        if (!kostki[i]) continue;
+        int prev = cel;
+        cel += gracz_step(kostki[i] - 1);
+        verify_move(GAME, start, cel, gracz, MULTI_ON);
+        GAME->dice[kostki[i] - 1] = 0;
+        GAME->pozostałe_ruchy--;
+        char buffer[20];
+        sprintf(buffer, " m %d %d", prev, cel);
+        strcat(GAME->ruchy, buffer);
+    }
+    paint_DICE(GAME->ui_2.window, GAME);
+    crud_move_pionek(GAME, start, cel, gracz);
+}
+
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     char kostki[50];
     struct MOVE_T move, forced;
@@ -478,39 +542,37 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
         comms(window, TXT_M_DICE, GREEN, gracz);
         w_mvwprintw(3, 4, TXT_M_DICE_INFO);
         clearLine(3);
+        move.kostka =
+            get_dice(window, GAME, gracz, (capture_flag ? MULTI_OFF : MULTI_ON),
+                     move.pionek);
+        if (move.kostka == -10) return;
 
-        move.kostka = get_dice(window, GAME, gracz);
-
-    } while (enforce_move(forced, move, bar_flag, capture_flag, gracz, GAME));
+    } while (enforce_move(forced, move, capture_flag, gracz, GAME));
 
     // end manual
 
     // verify
-    if (verify_move(GAME, move, gracz)) {
+    int cel = move.pionek + gracz_step(move.kostka - 1);
+    if (verify_move(GAME, move.pionek, cel, gracz, MULTI_OFF)) {
         pause();
         return move_action(window, GAME, gracz);
     }
+
     // end verify
 
     // move
     // start komunikat o ruchu
     if (move.pionek == 0 | move.pionek == 25) {
-        sprintf(
-            kostki, TXT_POST_MOVE_BAR,
-            move.pionek + (gracz == PLAYER_A ? GAME->dice[move.kostka - 1]
-                                             : -GAME->dice[move.kostka - 1]));
+        sprintf(kostki, TXT_POST_MOVE_BAR,
+                move.pionek + gracz_step(move.kostka - 1));
     } else {
-        sprintf(
-            kostki, TXT_POST_MOVE, move.pionek,
-            move.pionek + (gracz == PLAYER_A ? GAME->dice[move.kostka - 1]
-                                             : -GAME->dice[move.kostka - 1]));
+        sprintf(kostki, TXT_POST_MOVE, move.pionek,
+                move.pionek + gracz_step(move.kostka - 1));
     }
 
     comms(window, kostki, GREEN, gracz);
     // end komunikat o ruchu
-
     move_pionek(GAME, move, gracz);
-    pause();
 }
 
 void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
@@ -670,7 +732,7 @@ void run(struct GAME_T* GAME) {
 void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 1, CLR_PLAYER_B},
                   {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
                   {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
                   {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};

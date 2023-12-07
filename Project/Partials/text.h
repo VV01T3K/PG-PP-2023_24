@@ -8,7 +8,7 @@
 
 #define TXT_M_PION "Wybierz pionek"
 #define TXT_M_FIELD "Choose number from 1 to 24"
-#define TXT_M_DICE "Choose dice"
+#define TXT_M_DICE "Choose dice or [m] for multi dice"
 #define TXT_M_DICE_N "Choose next dice (or 0 to end turn)"
 #define TXT_M_DICE_INFO "Choose number of dice from bottom right panel"
 
