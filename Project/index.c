@@ -1,12 +1,12 @@
-#include "headers.h"
+#include "Partials/headers.h"
 
 void save_game(struct GAME_T* GAME, int gracz) {
-    FILE* file = fopen("save.txt", "w");
+    FILE* file = fopen(SAVE_PATH, "w");
     fprintf(file, "SEED: %d\n", GAME->rand_seed);
     fclose(file);
 }
 void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
-    FILE* file = fopen("save.txt", "a");
+    FILE* file = fopen(SAVE_PATH, "a");
     fprintf(file, "->%c%s\n", gracz, ruchy);
     fclose(file);
 }
@@ -600,7 +600,7 @@ void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
 }
 
 int load_save(struct GAME_T* GAME) {
-    FILE* file = fopen("save.txt", "r+");
+    FILE* file = fopen(SAVE_PATH, "r+");
     char buffer[2][3], c;
     fscanf(file, "SEED: %d", &GAME->rand_seed);
     int gracz = 0;

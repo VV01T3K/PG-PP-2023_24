@@ -19,6 +19,7 @@
         "memory": "c",
         "istream": "c",
         "sstream": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "string.h": "c"
     }
 }

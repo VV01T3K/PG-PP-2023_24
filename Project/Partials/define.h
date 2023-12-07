@@ -32,6 +32,10 @@
 
 #define BOARD_HEIGHT 13
 
+// FILE PATHS
+#define HALL_PATH "ARCHIVE/hallOfFame.txt"
+#define SAVE_PATH "ARCHIVE/save.txt"
+
 // Znaki
 // #define BLOCK "\u25A7"
 #define BLOCK "\u25A0"

@@ -9,9 +9,9 @@ apk search ncurses | grep 'dev'
 apk search ncurses | grep -- '-dev'
 apk info -qL ncurses-dev
 
-gcc -o .game index.c fun.c paint.c $(ncursesw6-config --cflags --libs) && ./.game
+gcc -o .game index.c Partials/*.c $(ncursesw6-config --cflags --libs) && ./.game
 
-gcc -o .game index.c fun.c paint.c $(ncursesw6-config --cflags --libs) && ./.game &&  rm .game && clear
+gcc -o .game index.c Partials/*.c $(ncursesw6-config --cflags --libs) && ./.game &&  rm .game && clear
 
 
 sudo update-locale LANG=en_US.UTF-8 LANGUAGE=en.UTF-8
