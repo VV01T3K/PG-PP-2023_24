@@ -731,12 +731,18 @@ void run(struct GAME_T* GAME) {
 }
 
 void placePionki(struct GAME_T* GAME) {
+    // struct {
+    //     int index, liczba, kolor;
+    // } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+    //               {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
+    //               {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
+    //               {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
     struct {
         int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
-                  {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
-                  {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
-                  {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
+    } pionki[] = {
+        {24, 1, CLR_PLAYER_A}, {23, 1, CLR_PLAYER_A}, {21, 1, CLR_PLAYER_A},
+        {20, 1, CLR_PLAYER_A}, {19, 1, CLR_PLAYER_A}, {18, 1, CLR_PLAYER_A},
+    };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
         GAME->plansza.pole[pionki[i].index].liczba = pionki[i].liczba;
@@ -753,13 +759,13 @@ void initGame(struct GAME_T* GAME) {
         GAME->plansza.pole[i].number = i;
     }
     placePionki(GAME);
-    BAR_PLAYER_A.liczba = 0;
+    BAR_PLAYER_A.liczba = 1;
     BAR_PLAYER_B.liczba = 0;
 
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 0;
+    GAME->plansza.dwor.gracz_A = 8;
     GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;

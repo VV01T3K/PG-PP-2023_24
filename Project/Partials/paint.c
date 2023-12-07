@@ -85,11 +85,11 @@ void paint_DWOR(int x, int y, WINDOW* window, struct DWOR_T dwor) {
     for (i = 0; i < BOARD_HEIGHT; i++) {
         mvwprintw(window, y + i, x, "%s   %s", LINE, LINE);
     }
-    for (i = 0, j = 0; i < dwor.gracz_A; i++, i % 3 == 0 ? j++ : j) {
+    for (i = 0, j = 0; i < dwor.gracz_B; i++, i % 3 == 0 ? j++ : j) {
         atrrCLR(CLR_PLAYER_B,
                 mvwprintw(window, y + j, x + i % 3 + 1, "%s", PIONEK));
     }
-    for (i = 0, j = 0; i < dwor.gracz_B; i++, i % 3 == 0 ? j++ : j) {
+    for (i = 0, j = 0; i < dwor.gracz_A; i++, i % 3 == 0 ? j++ : j) {
         atrrCLR(CLR_PLAYER_A, mvwprintw(window, y + BOARD_HEIGHT - j - 1,
                                         x + i % 3 + 1, "%s", PIONEK));
     }
