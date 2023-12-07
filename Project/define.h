@@ -27,9 +27,8 @@
 #define PADDED_BOARD_WIDTH (BOARD_WIDTH + (BOARD_PADDING * 3))
 #define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
 
-#define controls_padd 15 + 2  // strlen("Ruch-Gracza X: ") + x
-#define menu_padd 18 + 3      // strlen("Choose from list: ") + x
-#define controls_promt "R(oll) | M(ove) | S(kip) | E(xit)"
+#define CONTROLS_PADD 15 + 2  // strlen("Ruch-Gracza X: ") + x
+#define MENU_PADD 18 + 3      // strlen("Choose from list: ") + x
 
 #define BOARD_HEIGHT 13
 
@@ -92,7 +91,6 @@
     w_mvwprintw(y, 0, "│");
 
 #define pause() \
-    ;           \
     noecho();   \
     getch();    \
     echo();
@@ -101,8 +99,7 @@
 struct POLE_T {
     int liczba;  // 0 - brak, 1-15 - ilość pionków
     int kolor;   // 0 - brak, 1 - gracz A, 2 - gracz B
-    int xyPos;   // default specifing position on window
-    int number;  // number of pole
+    int number;  // number of field
 };
 struct DWOR_T {
     int gracz_A;  // 0 - brak, 1-15 - ilość pionków

@@ -36,3 +36,5 @@
 #define TXT_WRONG "Wrong input!"
 
 #define TXT_CLR_UNSUPPORTED "Terminal nie obsługuje kolorów!"
+
+#define TXT_CONTROLS "R(oll) | M(ove) | S(kip) | E(xit)"

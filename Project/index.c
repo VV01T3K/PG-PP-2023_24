@@ -88,7 +88,7 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
 }
 
 int decide_menu(WINDOW* window, struct GAME_T* GAME) {
-    W_GETNSTR_IN(1, 4, menu_padd);
+    W_GETNSTR_IN(1, 4, MENU_PADD);
     int result = atoi(in);
     switch (result) {
         case 1:
@@ -110,7 +110,7 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
             break;
     }
     clearLine(4);
-    wmove(window, 4, menu_padd);
+    wmove(window, 4, MENU_PADD);
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return decide_menu(window, GAME);
@@ -138,9 +138,9 @@ int roll(struct GAME_T* GAME) {
 }
 
 int decide_controls(WINDOW* window, struct GAME_T* GAME) {
-    w_mvwprintw(getmaxy(window) / 2, 4, controls_promt);
+    w_mvwprintw(getmaxy(window) / 2, 4, TXT_CONTROLS);
     clearLine(getmaxy(window) / 2);
-    W_GETNSTR_IN(1, 2, controls_padd);
+    W_GETNSTR_IN(1, 2, CONTROLS_PADD);
     switch (tolower(in[0])) {
         case 'r':
             w_wprintw("Roll");
@@ -179,7 +179,7 @@ void comms(WINDOW* window, char* str, int kolor, int gracz) {
 }
 
 int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    W_GETNSTR_IN(2, 2, controls_padd)
+    W_GETNSTR_IN(2, 2, CONTROLS_PADD)
     int result = atoi(in);
     if (result < 1 || result > 24) {
         w_wprintw(TXT_WRONG);
@@ -187,7 +187,7 @@ int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
     }
     wprintw(window, "Pole Nr %d", result);
     clearLine(2);
-    wmove(window, 2, controls_padd);
+    wmove(window, 2, CONTROLS_PADD);
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return get_number(window, GAME, gracz);
@@ -196,7 +196,7 @@ int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
 }
 
 int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    W_GETNSTR_IN(1, 2, controls_padd)
+    W_GETNSTR_IN(1, 2, CONTROLS_PADD)
     int result = atoi(in);
     if (result < 1 || result > (GAME->dice[3] != -1 ? 4 : 2)) {
         w_wprintw(TXT_WRONG);
