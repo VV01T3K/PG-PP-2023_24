@@ -14,6 +14,8 @@
 #define MULTI_ON 1
 #define MULTI_OFF 0
 
+#define TRASH_FIELD 26
+
 #define BAR_PLAYER_A GAME->plansza.pole[0]
 #define BAR_PLAYER_B GAME->plansza.pole[25]
 
@@ -117,7 +119,7 @@ struct DWOR_T {
 };
 struct PLANSZA_T {
     WINDOW* window;
-    struct POLE_T pole[POLE_COUNT + 2];
+    struct POLE_T pole[POLE_COUNT + 3];  // 0 - bar A, 25 - bar B, 26 - trash
     struct DWOR_T dwor;
 };
 struct GRACZ_T {
@@ -146,6 +148,7 @@ struct GAME_T {
     int dublet;
     int pozostałe_ruchy;
     char ruchy[MAX_LONG_STR];
+    int home_news;
 };
 
 struct MOVE_T {

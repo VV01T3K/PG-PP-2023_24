@@ -1,6 +1,7 @@
 #define TXT_VERIFY_1 "choose your field"
 #define TXT_VERIFY_2 "choose field with pieces"
 #define TXT_VERIFY_3 "choose conquerable field"
+#define TXT_VERIFY_4 "can't move to home"
 #define TXT_CAPTURE "Ładne bicie"
 #define TXT_MOVE_IMP "skip (no legal moves) [ANY]"
 #define TXT_BAR_FULL "move all pieces from bar! (ANY)"
@@ -38,3 +39,5 @@
 #define TXT_CLR_UNSUPPORTED "Terminal nie obsługuje kolorów!"
 
 #define TXT_CONTROLS "R(oll) | M(ove) | S(kip) | E(xit)"
+
+#define TXT_HOME_POS "You can move to home! [ANY]"

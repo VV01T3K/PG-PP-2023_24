@@ -8,7 +8,7 @@ void save_game(struct GAME_T* GAME, int gracz) {
 }
 void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
     FILE* file = fopen(SAVE_PATH, "a");
-    fprintf(file, "->%c%s\n", gracz, ruchy);
+    fprintf(file, "->%c %d%s\n", gracz, GAME->home_news, ruchy);
     fclose(file);
 }
 void save_move(struct GAME_T* GAME, int start, int cel) {
@@ -490,10 +490,42 @@ void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start) {
     crud_move_pionek(GAME, start, cel, gracz);
 }
 
+int can_take_home(struct GAME_T* GAME, int gracz) {
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+    int start = gracz == PLAYER_A ? 19 : 1;
+    int i, suma = 0;
+    for (i = start; i < start + 6; i++) {
+        if (GAME->plansza.pole[i].kolor == kolor) {
+            suma += GAME->plansza.pole[i].liczba;
+        }
+    }
+    if (suma == 15 - (gracz == PLAYER_A ? GAME->plansza.dwor.gracz_A
+                                        : GAME->plansza.dwor.gracz_B)) {
+        return 1;
+    }
+    return 0;
+}
+
+void move_to_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+    int* home = gracz == PLAYER_A ? &GAME->plansza.dwor.gracz_A
+                                  : &GAME->plansza.dwor.gracz_B;
+    int start = move.pionek;
+    GAME->plansza.pole[start].liczba--;
+    if (GAME->plansza.pole[start].liczba == 0)
+        GAME->plansza.pole[start].kolor = 0;
+    (*home)++;
+    GAME->pozostałe_ruchy--;
+    GAME->dice[move.kostka - 1] = 0;
+    GAME->home_news++;
+    save_move(GAME, start, TRASH_FIELD);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    paint_DICE(GAME->ui_2.window, GAME);
+}
+
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     char kostki[50];
     struct MOVE_T move, forced;
-    int bar_flag = 0, capture_flag = 0;
+    int bar_flag = 0, capture_flag = 0, home_flag = 0;
     forced.kostka = -1;
 
     if (!move_possible(GAME, gracz)) {
@@ -511,6 +543,15 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
         pause();
     }
     // end bar
+
+    // dwór
+    home_flag = can_take_home(GAME, gracz);
+    if (home_flag) {
+        comms(window, TXT_HOME_POS, GREEN, gracz);
+        pause();
+    }
+
+    // end dwór
 
     // capture
     if (capture_possible(GAME, gracz)) {
@@ -554,9 +595,22 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
 
     // verify
     int cel = move.pionek + gracz_step(move.kostka - 1);
+    if (home_flag && (cel > 24 || cel < 1))
+        cel = gracz == PLAYER_A ? 25 : 0;
+    else if (cel > 24 || cel < 1) {
+        comms(window, TXT_VERIFY_4, RED, gracz);
+        pause();
+        return move_action(window, GAME, gracz);
+    }
+
     if (verify_move(GAME, move.pionek, cel, gracz, MULTI_OFF)) {
         pause();
         return move_action(window, GAME, gracz);
+    }
+
+    if (home_flag && (cel > 24 || cel < 1)) {
+        move_to_home(GAME, move, gracz);
+        return;
     }
 
     // end verify
@@ -659,6 +713,8 @@ void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
 
     GAME->plansza.pole[cel].liczba++;
     GAME->plansza.pole[start].liczba--;
+    GAME->plansza.pole[TRASH_FIELD].kolor = 0;
+    GAME->plansza.pole[TRASH_FIELD].liczba = 0;
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 
@@ -666,7 +722,7 @@ int load_save(struct GAME_T* GAME) {
     FILE* file = fopen(SAVE_PATH, "r+");
     char buffer[2][3], c;
     fscanf(file, "SEED: %d", &GAME->rand_seed);
-    int gracz = 0;
+    int gracz = 0, home;
     while (fscanf(file, "%c", &c) != EOF) {
         // nadpisanie tekstu
         // if (c == 't') {
@@ -675,11 +731,13 @@ int load_save(struct GAME_T* GAME) {
         //     fprintf(file, "Your text here2\n");
         // }
         if (c == '\n') {
-            fscanf(file, "->%c", &c);
+            fscanf(file, "->%c %d", &c, &home);
             if (c == 'A') {
                 gracz = PLAYER_A;
+                GAME->plansza.dwor.gracz_A += home;
             } else if (c == 'B') {
                 gracz = PLAYER_B;
+                GAME->plansza.dwor.gracz_B += home;
             }
         }
         if (c == 'm') {
@@ -740,8 +798,8 @@ void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
     } pionki[] = {
-        {24, 1, CLR_PLAYER_A}, {23, 1, CLR_PLAYER_A}, {21, 1, CLR_PLAYER_A},
-        {20, 1, CLR_PLAYER_A}, {19, 1, CLR_PLAYER_A}, {18, 1, CLR_PLAYER_A},
+        {24, 1, CLR_PLAYER_A}, {23, 1, CLR_PLAYER_A}, {22, 1, CLR_PLAYER_A},
+        {21, 1, CLR_PLAYER_A}, {20, 1, CLR_PLAYER_A}, {19, 1, CLR_PLAYER_A},
     };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
@@ -753,19 +811,20 @@ void placePionki(struct GAME_T* GAME) {
 void initGame(struct GAME_T* GAME) {
     GAME->rand_seed = time(NULL);
     srand(GAME->rand_seed);
+    GAME->home_news = 0;
     for (int i = 1; i < POLE_COUNT + 1; i++) {
         GAME->plansza.pole[i].liczba = 0;
         GAME->plansza.pole[i].kolor = 0;
         GAME->plansza.pole[i].number = i;
     }
     placePionki(GAME);
-    BAR_PLAYER_A.liczba = 1;
+    BAR_PLAYER_A.liczba = 0;
     BAR_PLAYER_B.liczba = 0;
 
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 8;
+    GAME->plansza.dwor.gracz_A = 9;
     GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;
