@@ -687,7 +687,6 @@ void initGame(struct GAME_T* GAME) {
     for (int i = 1; i < POLE_COUNT + 1; i++) {
         GAME->plansza.pole[i].liczba = 0;
         GAME->plansza.pole[i].kolor = 0;
-        GAME->plansza.pole[i].xyPos = 0;
         GAME->plansza.pole[i].number = i;
     }
     placePionki(GAME);
