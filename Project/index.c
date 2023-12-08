@@ -522,6 +522,23 @@ void move_to_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
 }
 
+int is_better_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+    int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
+                     GAME->dice[3]};
+    int home_start = gracz == PLAYER_A ? 19 : 1;
+    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+    char test[50];
+    qsort(kostki, 4, sizeof(int), desc_dice);
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        struct POLE_T* pole = &GAME->plansza.pole[home_start + kostki[i]];
+        if (move.pionek != pole->number && pole->kolor == kolor &&
+            pole->liczba > 0)
+            return 1;
+    }
+    return 0;
+}
+
 void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     char kostki[50];
     struct MOVE_T move, forced;
@@ -580,13 +597,11 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
             clearLine(3);
             move.pionek = get_number(window, GAME, gracz);
         }
-
-        comms(window, TXT_M_DICE, GREEN, gracz);
+        int multi = capture_flag || home_flag ? MULTI_OFF : MULTI_ON;
+        comms(window, (multi ? TXT_M_DICE_M : TXT_M_DICE), GREEN, gracz);
         w_mvwprintw(3, 4, TXT_M_DICE_INFO);
         clearLine(3);
-        move.kostka =
-            get_dice(window, GAME, gracz, (capture_flag ? MULTI_OFF : MULTI_ON),
-                     move.pionek);
+        move.kostka = get_dice(window, GAME, gracz, multi, move.pionek);
         if (move.kostka == -10) return;
 
     } while (enforce_move(forced, move, capture_flag, gracz, GAME));
@@ -608,7 +623,12 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
         return move_action(window, GAME, gracz);
     }
 
-    if (home_flag && (cel > 24 || cel < 1)) {
+    if (home_flag) {
+        if (is_better_home(GAME, move, gracz)) {
+            comms(window, "istnieje lepsze zdjęcie", RED, gracz);
+            pause();
+            return move_action(window, GAME, gracz);
+        }
         move_to_home(GAME, move, gracz);
         return;
     }
