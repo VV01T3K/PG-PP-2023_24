@@ -9,6 +9,7 @@ void save_game(struct GAME_T* GAME, int gracz) {
 void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
     FILE* file = fopen(SAVE_PATH, "a");
     fprintf(file, "->%c %d%s\n", gracz, GAME->home_news, ruchy);
+    ruchy[0] = '\0';
     fclose(file);
 }
 void save_move(struct GAME_T* GAME, int start, int cel) {
@@ -126,10 +127,8 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
 
 int roll(struct GAME_T* GAME) {
     GAME->dublet = FALSE;
-    // GAME->dice[0] = rand() % 6 + 1;
-    // GAME->dice[1] = rand() % 6 + 1;
-    GAME->dice[0] = 3;
-    GAME->dice[1] = 3;
+    GAME->dice[0] = rand() % 6 + 1;
+    GAME->dice[1] = rand() % 6 + 1;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -742,6 +741,9 @@ int load_save(struct GAME_T* GAME) {
     FILE* file = fopen(SAVE_PATH, "r+");
     char buffer[2][3], c;
     fscanf(file, "SEED: %d", &GAME->rand_seed);
+    move(0, strlen(TXT_AUTHOR));
+    printw(" | SEED: %d", GAME->rand_seed);
+    refresh();
     int gracz = 0, home;
     while (fscanf(file, "%c", &c) != EOF) {
         // nadpisanie tekstu
@@ -809,18 +811,18 @@ void run(struct GAME_T* GAME) {
 }
 
 void placePionki(struct GAME_T* GAME) {
-    // struct {
-    //     int index, liczba, kolor;
-    // } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
-    //               {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
-    //               {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
-    //               {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
     struct {
         int index, liczba, kolor;
-    } pionki[] = {
-        {24, 1, CLR_PLAYER_A}, {23, 1, CLR_PLAYER_A}, {22, 1, CLR_PLAYER_A},
-        {21, 1, CLR_PLAYER_A}, {20, 1, CLR_PLAYER_A}, {19, 1, CLR_PLAYER_A},
-    };
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+                  {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
+                  {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
+                  {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
+    // struct {
+    //     int index, liczba, kolor;
+    // } pionki[] = {
+    //     {24, 1, CLR_PLAYER_A}, {23, 1, CLR_PLAYER_A}, {22, 1, CLR_PLAYER_A},
+    //     {21, 1, CLR_PLAYER_A}, {20, 1, CLR_PLAYER_A}, {19, 1, CLR_PLAYER_A},
+    // };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
         GAME->plansza.pole[pionki[i].index].liczba = pionki[i].liczba;
@@ -831,6 +833,9 @@ void placePionki(struct GAME_T* GAME) {
 void initGame(struct GAME_T* GAME) {
     GAME->rand_seed = time(NULL);
     srand(GAME->rand_seed);
+    move(0, strlen(TXT_AUTHOR));
+    printw(" | SEED: %d", GAME->rand_seed);
+    refresh();
     GAME->home_news = 0;
     for (int i = 1; i < POLE_COUNT + 1; i++) {
         GAME->plansza.pole[i].liczba = 0;
@@ -844,7 +849,7 @@ void initGame(struct GAME_T* GAME) {
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 9;
+    GAME->plansza.dwor.gracz_A = 0;
     GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;
@@ -869,7 +874,6 @@ int main() {
     if (initialInit(GAME)) {
         printw(TXT_AUTHOR);
         initWindows(GAME);
-        initGame(GAME);
         run(GAME);
     }
     free(GAME);
