@@ -625,7 +625,7 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
 
     if (home_flag) {
         if (is_better_home(GAME, move, gracz)) {
-            comms(window, "istnieje lepsze zdjęcie", RED, gracz);
+            comms(window, TXT_BETTER_HOME, RED, gracz);
             pause();
             return move_action(window, GAME, gracz);
         }
