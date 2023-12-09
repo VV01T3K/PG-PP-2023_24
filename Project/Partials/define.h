@@ -47,6 +47,7 @@
 #define PIONEK "\u25CF"
 #define POLE_UP "\u25B3"
 #define POLE_DOWN "\u25BD"
+#define HR "\u2500"
 // #define LINE "\u2507"
 #define LINE "|"
 
@@ -61,9 +62,11 @@
 #define DARK_BLUE 7
 #define MAGENTA 8
 #define CYAN 9
+#define ORANGE 10
 
 #define COLOR_BROWN 80
 #define COLOR_DARK_BLUE 81
+#define COLOR_ORANGE 82
 
 // Makra
 #define W_GETNSTR_IN(n, y, x) \
@@ -149,6 +152,7 @@ struct GAME_T {
     int pozostałe_ruchy;
     char ruchy[MAX_LONG_STR];
     int home_news;
+    int turn;
 };
 
 struct MOVE_T {

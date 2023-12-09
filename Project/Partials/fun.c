@@ -12,6 +12,8 @@ void colorInit() {
     init_pair(7, COLOR_DARK_BLUE, COLOR_BLACK);
     init_pair(8, COLOR_MAGENTA, COLOR_BLACK);
     init_pair(9, COLOR_CYAN, COLOR_BLACK);
+    init_color(COLOR_ORANGE, 1000, 500, 0);
+    init_pair(10, COLOR_ORANGE, COLOR_BLACK);
 }
 
 void initWindows(struct GAME_T* GAME) {

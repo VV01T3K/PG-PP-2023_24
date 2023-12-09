@@ -6,6 +6,7 @@ void save_game(struct GAME_T* GAME, int gracz) {
     fprintf(file, "SEED: %d\n", GAME->rand_seed);
     fclose(file);
 }
+void paint_DICE(WINDOW* window, struct GAME_T* GAME);
 void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
     FILE* file = fopen(SAVE_PATH, "a");
     fprintf(file, "->%c %d%s\n", gracz, GAME->home_news, ruchy);
@@ -27,7 +28,23 @@ void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(0, 1, "State"););
+
+    watrr(A_BOLD, w_mvwprintw(2, 10, "SCORE"););
+    mvwprintw(window, 3, 6, "A: %d  |  B: %d", GAME->gracz_A.wynik,
+              GAME->gracz_B.wynik);
+    wmove(window, 4, 4);
+    for (int i = 0; i < 18; i++) w_wprintw(HR);
+
+    watrr(A_BOLD, w_mvwprintw(5, 7, "TURN:"););
+    mvwprintw(window, 5, 13, "Nr %d", GAME->turn);
+
+    watrr(A_BOLD, w_mvwprintw(6, 5, "MOVES LEFT:"););
+    mvwprintw(window, 6, 18, "%d", GAME->pozostałe_ruchy);
+
+    wmove(window, 7, 4);
+    for (int i = 0; i < 18; i++) w_wprintw(HR);
     wrefresh(window);
+    paint_DICE(GAME->ui_2.window, GAME);
 }
 
 void paint_HALL(WINDOW* window, struct GAME_T* GAME) {
@@ -40,7 +57,7 @@ void paint_HALL(WINDOW* window, struct GAME_T* GAME) {
 void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME, int gracz) {
     wclear(window);
     box(window, 0, 0);
-    w_mvwprintw(getmaxy(window) - 1, 1, "Controls");
+    watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Controls"););
 
     wrefresh(window);
 }
@@ -56,7 +73,7 @@ void printDICE(WINDOW* win, int y, int x, struct GAME_T* GAME, int index) {
 void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
-    w_mvwprintw(getmaxy(window) - 1, 1, "Kostki");
+    watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Dices"););
 
     if (GAME->dice[0] == -1) {
         w_mvwprintw(2, 6, TXT_DICE_ROLL);
@@ -108,6 +125,7 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
             w_wprintw("Replay");
             break;
         case 4:
+            free(GAME);
             endwin();
             exit(0);
             break;
@@ -176,12 +194,10 @@ int decide_controls(WINDOW* window, struct GAME_T* GAME) {
 void comms(WINDOW* window, char* str, int kolor, int gracz) {
     wmove(window, 1, 2);
     clearLine(1);
-    char prefix[] = "You have to";
-    watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s %s",
-                                           kolor == RED ? prefix : "\b", str););
-          atrrCLR(gracz == 1 ? CLR_PLAYER_A : CLR_PLAYER_B,
-                  mvwprintw(window, 2, 2,
-                            "Ruch-Gracza %s: ", gracz == 1 ? "A" : "B")););
+    watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s", str);); atrrCLR(
+              gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B,
+              mvwprintw(window, 2, 2,
+                        "Ruch-Gracza %s: ", gracz == PLAYER_A ? "A" : "B")););
     wrefresh(window);
 }
 
@@ -244,6 +260,7 @@ void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
     GAME->pozostałe_ruchy--;
+    paint_STATE(GAME->aside.window, GAME);
     save_move(GAME, pionek, cel);
 }
 
@@ -650,23 +667,24 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
 }
 
 void turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
+    GAME->turn++;
     comms(window, GAME->komunikat, GREEN, gracz);
     wrefresh(window);
-    while (decide_controls(window, GAME) != 'r') {
+    while (decide_controls(window, GAME) != 'r')
         comms(window, TXT_DECIDE_R, RED, gracz);
-    }
+
     GAME->pozostałe_ruchy = roll(GAME);
+    paint_STATE(GAME->aside.window, GAME);
     while (GAME->pozostałe_ruchy > 0) {
         comms(window, TXT_DECIDE_M, GREEN, gracz);
-        while (decide_controls(window, GAME) != 'm') {
+        while (decide_controls(window, GAME) != 'm')
             comms(window, "move", RED, gracz);
-        }
+
         move_action(window, GAME, gracz);
     }
     comms(window, TXT_DECIDE_S, GREEN, gracz);
-    while (decide_controls(window, GAME) != 's') {
+    while (decide_controls(window, GAME) != 's')
         comms(window, "skip", RED, gracz);
-    }
 }
 void gameplay(struct GAME_T* GAME, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
@@ -674,15 +692,17 @@ void gameplay(struct GAME_T* GAME, int gracz) {
         if (gracz == PLAYER_A) {
             turn(GAME->controls.window, GAME, PLAYER_A);
             save_turn(GAME, GAME->ruchy, 'A');
-            // check_win(GAME);
+            if (check_win(GAME)) break;
             turn(GAME->controls.window, GAME, PLAYER_B);
             save_turn(GAME, GAME->ruchy, 'B');
-            // check_win(GAME);
+            if (check_win(GAME)) break;
         } else {
             turn(GAME->controls.window, GAME, PLAYER_B);
-            // check_win(GAME);
+            save_turn(GAME, GAME->ruchy, 'B');
+            if (check_win(GAME)) break;
             turn(GAME->controls.window, GAME, PLAYER_A);
-            // check_win(GAME);
+            save_turn(GAME, GAME->ruchy, 'A');
+            if (check_win(GAME)) break;
         }
     }
 }
@@ -782,14 +802,13 @@ void run(struct GAME_T* GAME) {
 
     switch (decide_menu(GAME->menu.window, GAME)) {
         case 1:
+            initGame(GAME);
             paint_GAMEVIEW(GAME);
-            // int gracz = who_starts(GAME);
             gracz = PLAYER_A;
+            // gracz = who_starts(GAME);
             initGame(GAME);
             save_game(GAME, gracz);
             gameplay(GAME, gracz);
-            // gameplay(GAME, PLAYER_A);
-            // run(GAME);  // powrót do menu
             break;
         case 2:
             paint_GAMEVIEW(GAME);
@@ -831,6 +850,8 @@ void placePionki(struct GAME_T* GAME) {
 }
 
 void initGame(struct GAME_T* GAME) {
+    GAME->pozostałe_ruchy = 0;
+    GAME->turn = 0;
     GAME->rand_seed = time(NULL);
     srand(GAME->rand_seed);
     move(0, strlen(TXT_AUTHOR));
@@ -873,11 +894,14 @@ int main() {
     if (GAME == NULL) return 1;
     if (initialInit(GAME)) {
         printw(TXT_AUTHOR);
+        GAME->gracz_A.wynik = 0;
+        GAME->gracz_B.wynik = 0;
         initWindows(GAME);
+        initGame(GAME);
         run(GAME);
     }
-    free(GAME);
     pause();
+    free(GAME);
     endwin();
     return 0;
 }
