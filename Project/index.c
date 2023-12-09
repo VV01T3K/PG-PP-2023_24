@@ -789,7 +789,7 @@ void run(struct GAME_T* GAME) {
             save_game(GAME, gracz);
             gameplay(GAME, gracz);
             // gameplay(GAME, PLAYER_A);
-            run(GAME);  // powrót do menu
+            // run(GAME);  // powrót do menu
             break;
         case 2:
             paint_GAMEVIEW(GAME);
