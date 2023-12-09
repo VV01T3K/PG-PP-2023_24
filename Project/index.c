@@ -133,7 +133,6 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
             free(GAME);
             endwin();
             exit(0);
-            break;
         default:
             w_wprintw(TXT_WRONG);
             return decide_menu(window, GAME);
@@ -205,16 +204,29 @@ int decide_controls(WINDOW* window, struct GAME_T* GAME) {
 void comms(WINDOW* window, char* str, int kolor, int gracz) {
     wmove(window, 1, 2);
     clearLine(1);
-    watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s", str);); atrrCLR(
-              gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B,
-              mvwprintw(window, 2, 2,
-                        "Ruch-Gracza %s: ", gracz == PLAYER_A ? "A" : "B")););
+    if (gracz == -1) {
+        watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s", str););
+              atrrCLR(ORANGE, mvwprintw(window, 2, 2, "Replay options:")););
+    } else {
+        watrr(A_BOLD, atrrCLR(kolor, mvwprintw(window, 1, 2, "%s", str););
+              atrrCLR(gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B,
+                      mvwprintw(window, 2, 2, "Ruch-Gracza %s: ",
+                                gracz == PLAYER_A ? "A" : "B")););
+    }
     wrefresh(window);
 }
 
 int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
-    W_GETNSTR_IN(2, 2, CONTROLS_PADD)
+    W_GETNSTR_IN((gracz == -1 ? 20 : 2), 2,
+                 CONTROLS_PADD + (gracz == -1 ? 0 : 1))
     int result = atoi(in);
+    if (gracz == -1) {
+        if (!result && in[0] != '0') {
+            w_wprintw(TXT_WRONG);
+            return get_number(window, GAME, gracz);
+        }
+        return result;
+    }
     if (result < 1 || result > 24) {
         w_wprintw(TXT_WRONG);
         return get_number(window, GAME, gracz);
@@ -840,17 +852,18 @@ void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 
-int load_save(struct GAME_T* GAME) {
-    FILE* file = fopen(SAVE_PATH, "r+");
-
+int load_save(struct GAME_T* GAME, FILE* file, int recur, int limit) {
+    initGame(GAME);
+    int lines = 0;
     char buffer[2][3], c;
-    fscanf(file, "SEED: %d | SCORE: A%d B%d", &GAME->rand_seed,
+    if (!recur) fscanf(file, "%*c");
+    fscanf(file, "EED: %d | SCORE: A%d B%d", &GAME->rand_seed,
            &GAME->gracz_A.wynik, &GAME->gracz_B.wynik);
     move(0, strlen(TXT_AUTHOR));
     printw(" | SEED: %d", GAME->rand_seed);
     refresh();
     int gracz = 0, home;
-    while (fscanf(file, "%c", &c) != EOF) {
+    while (fscanf(file, "%c", &c) != EOF && (lines < limit - 1 || limit < 0)) {
         // nadpisanie tekstu
         // if (c == 't') {
         //     fseek(file, -1, SEEK_CUR);
@@ -858,7 +871,8 @@ int load_save(struct GAME_T* GAME) {
         //     fprintf(file, "Your text here2\n");
         // }
         if (c == '\n') {
-            fscanf(file, "->%*d%c %d", &c, &home);
+            lines++;
+            fscanf(file, "->%d%c %d", &GAME->turn, &c, &home);
             if (c == 'A') {
                 gracz = PLAYER_A;
                 GAME->plansza.dwor.gracz_A += home;
@@ -874,8 +888,10 @@ int load_save(struct GAME_T* GAME) {
             cel = atoi(buffer[1]);
             crud_move_pionek(GAME, pionek, cel, gracz);
         }
+        if (c == 'S') {
+            return load_save(GAME, file, 1, limit - lines);
+        }
     }
-    fclose(file);
     return gracz == PLAYER_A ? PLAYER_B : PLAYER_A;
 }
 void exec_win(struct GAME_T* GAME, int points, int gracz) {
@@ -899,6 +915,90 @@ void exec_win(struct GAME_T* GAME, int points, int gracz) {
         gameplay(GAME, gracz);
     }
 }
+
+int decide_replay(WINDOW* window, struct GAME_T* GAME) {
+    w_mvwprintw(getmaxy(window) / 2, 4, TXT_REPLAY);
+    clearLine(getmaxy(window) / 2);
+    W_GETNSTR_IN(1, 2, CONTROLS_PADD + 1);
+    int result;
+    switch (tolower(in[0])) {
+        case 'n':
+            w_wprintw("Next");
+            result = 1;
+            break;
+        case 'p':
+            w_wprintw("Prev");
+            result = 2;
+            break;
+        case 'g':
+            w_wprintw("Go to");
+            result = 3;
+            break;
+        case 's':
+            w_wprintw("Start Playing");
+            result = 4;
+            break;
+        case 'e':
+            run(GAME);
+            break;
+
+        default:
+            w_wprintw(TXT_WRONG);
+            return decide_replay(window, GAME);
+            break;
+    }
+    char ch = wgetch(window);
+    if (ch != '\n') return decide_replay(window, GAME);
+    clearLine(2);
+    return result;
+}
+
+void replay(struct GAME_T* GAME, FILE* file, int curr, int limit) {
+    curr < 0 ? curr = limit : curr;
+    curr > limit ? curr = 0 : curr;
+    rewind(file);
+    int g = load_save(GAME, file, 0, curr);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    paint_STATE(GAME->aside.window, GAME);
+    WINDOW* window = GAME->controls.window;
+    char buffer[50];
+    sprintf(buffer, TXT_REPLAY_1, curr, limit);
+    comms(window, buffer, GREEN, -1);
+    switch (decide_replay(window, GAME)) {
+        case 1:
+            curr++;
+            break;
+        case 2:
+            curr--;
+            break;
+        case 3:
+            comms(window, TXT_REPLAY_2, BLUE, -1);
+            curr = get_number(window, GAME, -1);
+            sprintf(buffer, TXT_REPLAY_3, curr);
+            comms(window, buffer, CYAN, -1);
+            pause();
+            clearLine(3);
+            w_mvwprintw(2, getmaxx(window) - 1, "│");
+            break;
+        case 4:
+            gameplay(GAME, g);
+            return;
+
+        default:
+            break;
+    }
+    wrefresh(window);
+    replay(GAME, file, curr, limit);
+}
+int count_lines(FILE* file) {
+    int lines = 1;
+    char c;
+    while (fscanf(file, "%c", &c) != EOF) {
+        if (c == '\n') lines++;
+    }
+    rewind(file);
+    return lines;
+}
 void run(struct GAME_T* GAME) {
     int gracz;
     paint_HALL(GAME->aside.window, GAME);
@@ -918,17 +1018,20 @@ void run(struct GAME_T* GAME) {
             gameplay(GAME, gracz);
             break;
         case 2:
-            initGame(GAME);
-            gracz = load_save(GAME);
+            FILE* file2 = fopen(SAVE_PATH, "r+");
+            gracz = load_save(GAME, file2, 0, -1);
+            fclose(file2);
             paint_GAMEVIEW(GAME);
             gameplay(GAME, gracz);
             break;
         case 3:
-            paint_STATE(GAME->aside.window, GAME);
-            paint_DICE(GAME->ui_2.window, GAME);
-            paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
-            // paint_REPLAY(GAME->controls.window, GAME, PLAYER_A);
-            // replay(GAME);
+            paint_GAMEVIEW(GAME);
+            FILE* file3 = fopen(SAVE_PATH, "r+");
+            int limit = count_lines(file3);
+            comms(GAME->controls.window, TXT_REPLAY_0, GREEN, -1);
+            pause();
+            replay(GAME, file3, 0, limit);  // 0 -> start
+            fclose(file3);
             break;
 
         default:
@@ -937,20 +1040,19 @@ void run(struct GAME_T* GAME) {
 }
 
 void placePionki(struct GAME_T* GAME) {
-    // struct {
-    //     int index, liczba, kolor;
-    // } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
-    //               {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
-    //               {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
-    //               {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
     struct {
         int index, liczba, kolor;
-    } pionki[] = {
-        // {1, 1, CLR_PLAYER_B},  {2, 1, CLR_PLAYER_B},  {4, 1, CLR_PLAYER_B},
-        {23, 1, CLR_PLAYER_A},
-        {24, 1, CLR_PLAYER_A},
-        {21, 1, CLR_PLAYER_A},
-    };
+    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+                  {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
+                  {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
+                  {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
+    // struct {
+    //     int index, liczba, kolor;
+    // } pionki[] = {
+    //     // {1, 1, CLR_PLAYER_B},  {2, 1, CLR_PLAYER_B},  {4, 1,
+    //     CLR_PLAYER_B}, {23, 1, CLR_PLAYER_A}, {24, 1, CLR_PLAYER_A}, {21, 1,
+    //     CLR_PLAYER_A},
+    // };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
         GAME->plansza.pole[pionki[i].index].liczba = pionki[i].liczba;
@@ -980,8 +1082,8 @@ void initGame(struct GAME_T* GAME) {
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 12;
-    GAME->plansza.dwor.gracz_B = 12;
+    GAME->plansza.dwor.gracz_A = 0;
+    GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;
     GAME->dice[1] = -1;

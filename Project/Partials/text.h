@@ -47,3 +47,11 @@
 
 #define TXT_START_NEXT "Enter [n] to start next game or [e] to exit"
 #define TXT_DECIDE_N "You can move now"
+
+#define TXT_CONTROLS "R(oll) | M(ove) | S(kip) | E(xit)"
+#define TXT_REPLAY "N(ext) | P(revious) | (G)oto | (S)tart | E(xit)"
+
+#define TXT_REPLAY_0 "Welcome to replay mode!"
+#define TXT_REPLAY_1 "Current step: %d | Max steps: %d"
+#define TXT_REPLAY_2 "Choose step to go to"
+#define TXT_REPLAY_3 "Going to step: %d"

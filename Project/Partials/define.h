@@ -99,8 +99,8 @@
 #define clearLine(y)                          \
     wclrtoeol(window);                        \
     w_mvwprintw(y, getmaxx(window) - 1, "│"); \
-    wrefresh(window);                         \
-    w_mvwprintw(y, 0, "│");
+    w_mvwprintw(y, 0, "│");                   \
+    wrefresh(window);
 
 #define pause() \
     noecho();   \
