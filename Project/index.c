@@ -52,10 +52,22 @@ void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     paint_DICE(GAME->ui_2.window, GAME);
 }
 
-void paint_HALL(WINDOW* window, struct GAME_T* GAME) {
+void paint_FAME(WINDOW* window, struct GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(1, 7, "Hall of Fame"););
+    FILE* file = fopen(FAME_PATH, "r");
+    char buffer[MAX_NAME];
+    for (int i = 0; i < MAX_FAME; i++) {
+        fscanf(file, "%s %d", buffer, &GAME->fame.gracz[i].wynik);
+        if (buffer[0] == '\0') break;
+        strcpy(GAME->fame.gracz[i].nazwa, buffer);
+        buffer[0] = '\0';
+        mvwprintw(window, i + 3, 2, "%d) %s %d", i + 1,
+                  GAME->fame.gracz[i].nazwa, GAME->fame.gracz[i].wynik);
+    }
+    fclose(file);
+
     wrefresh(window);
 }
 
@@ -168,6 +180,51 @@ int roll(struct GAME_T* GAME) {
     }
 }
 
+void paint_NAME(WINDOW* window, struct GAME_T* GAME) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(1, 1, TXT_NAME););
+    wrefresh(window);
+}
+
+void get_name(char* name, WINDOW* window, struct GAME_T* GAME) {
+    W_GETNSTR_IN(MAX_NAME, 1, strlen(TXT_NAME) + 2);
+    strcpy(name, in);
+}
+
+int asc_fame(const void* a, const void* b) {
+    return ((struct GRACZ_T*)a)->wynik - ((struct GRACZ_T*)b)->wynik;
+}
+int desc_fame(const void* a, const void* b) {
+    return ((struct GRACZ_T*)b)->wynik - ((struct GRACZ_T*)a)->wynik;
+}
+void save_fame(struct GAME_T* GAME, char* name, int points) {
+    qsort(GAME->fame.gracz, MAX_FAME, sizeof(struct GRACZ_T), asc_fame);
+    if (points > GAME->fame.gracz[0].wynik) {
+        strcpy(GAME->fame.gracz[0].nazwa, name);
+        GAME->fame.gracz[0].wynik = points;
+    }
+    qsort(GAME->fame.gracz, MAX_FAME, sizeof(struct GRACZ_T), desc_fame);
+    FILE* file = fopen(FAME_PATH, "w");
+    for (int i = 0; i < MAX_FAME; i++) {
+        if (GAME->fame.gracz[i].nazwa[0] == '\0') break;
+        fprintf(file, "%s %d\n", GAME->fame.gracz[i].nazwa,
+                GAME->fame.gracz[i].wynik);
+    }
+    fclose(file);
+}
+
+void conclude(struct GAME_T* GAME) {
+    save_game(GAME);
+    paint_NAME(GAME->menu.window, GAME);
+    char name[MAX_NAME];
+    get_name(name, GAME->menu.window, GAME);
+    int points = GAME->gracz_A.wynik > GAME->gracz_B.wynik
+                     ? GAME->gracz_A.wynik
+                     : GAME->gracz_B.wynik;
+    save_fame(GAME, name, points);
+}
+
 int decide_controls(WINDOW* window, struct GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) / 2, 4, TXT_CONTROLS);
     clearLine(getmaxy(window) / 2);
@@ -184,7 +241,7 @@ int decide_controls(WINDOW* window, struct GAME_T* GAME) {
             break;
         case 'e':
             w_wprintw("Exit");
-            if (GAME->ended) save_game(GAME);
+            if (GAME->ended) conclude(GAME);
             run(GAME);
             break;
         case 'n':
@@ -1001,7 +1058,7 @@ int count_lines(FILE* file) {
 }
 void run(struct GAME_T* GAME) {
     int gracz;
-    paint_HALL(GAME->aside.window, GAME);
+    paint_FAME(GAME->aside.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
 
     refresh();
@@ -1040,19 +1097,19 @@ void run(struct GAME_T* GAME) {
 }
 
 void placePionki(struct GAME_T* GAME) {
-    struct {
-        int index, liczba, kolor;
-    } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
-                  {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
-                  {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
-                  {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
     // struct {
     //     int index, liczba, kolor;
-    // } pionki[] = {
-    //     // {1, 1, CLR_PLAYER_B},  {2, 1, CLR_PLAYER_B},  {4, 1,
-    //     CLR_PLAYER_B}, {23, 1, CLR_PLAYER_A}, {24, 1, CLR_PLAYER_A}, {21, 1,
-    //     CLR_PLAYER_A},
-    // };
+    // } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
+    //               {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
+    //               {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
+    //               {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
+    struct {
+        int index, liczba, kolor;
+    } pionki[] = {
+        // {1, 1, CLR_PLAYER_B},  {2, 1, CLR_PLAYER_B},  {4, 1,CLR_PLAYER_B},
+        // {23, 1, CLR_PLAYER_A},
+        {24, 1, CLR_PLAYER_A},
+    };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
         GAME->plansza.pole[pionki[i].index].liczba = pionki[i].liczba;
@@ -1082,7 +1139,7 @@ void initGame(struct GAME_T* GAME) {
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 0;
+    GAME->plansza.dwor.gracz_A = 14;
     GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;

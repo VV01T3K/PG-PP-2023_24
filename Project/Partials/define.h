@@ -1,7 +1,7 @@
 // Stałe
 #define TRUE 1
 #define FALSE 0
-#define MAX_HALL_OF_FAME 10
+#define MAX_FAME 9
 #define MAX_NAME 20
 #define MAX_BAR 6
 #define POLE_COUNT 24
@@ -38,7 +38,7 @@
 #define BOARD_HEIGHT 13
 
 // FILE PATHS
-#define HALL_PATH "ARCHIVE/hallOfFame.txt"
+#define FAME_PATH "ARCHIVE/fame.txt"
 #define SAVE_PATH "ARCHIVE/save.txt"
 
 // Znaki
@@ -129,8 +129,8 @@ struct GRACZ_T {
     char nazwa[MAX_NAME];
     int wynik;
 };
-struct HALL_OF_FAME_T {
-    struct GRACZ_T gracz[MAX_HALL_OF_FAME];
+struct FAME_T {
+    struct GRACZ_T gracz[MAX_FAME];
 };
 struct UI_T {
     WINDOW* window;
@@ -140,7 +140,7 @@ struct GAME_T {
     struct PLANSZA_T plansza;
     struct GRACZ_T gracz_A;
     struct GRACZ_T gracz_B;
-    struct HALL_OF_FAME_T hall_of_fame;
+    struct FAME_T fame;
     struct UI_T aside;
     struct UI_T controls;
     struct UI_T ui_2;

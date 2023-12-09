@@ -55,3 +55,5 @@
 #define TXT_REPLAY_1 "Current step: %d | Max steps: %d"
 #define TXT_REPLAY_2 "Choose step to go to"
 #define TXT_REPLAY_3 "Going to step: %d"
+
+#define TXT_NAME "Enter your name:"
