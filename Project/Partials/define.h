@@ -153,6 +153,7 @@ struct GAME_T {
     char ruchy[MAX_LONG_STR];
     int home_news;
     int turn;
+    int ended;
 };
 
 struct MOVE_T {

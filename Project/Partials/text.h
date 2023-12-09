@@ -44,3 +44,6 @@
 #define TXT_HOME_POS "You can move to home! [ANY]"
 
 #define TXT_BETTER_HOME "You have to choose optimal move!"
+
+#define TXT_START_NEXT "Enter [n] to start next game or [e] to exit"
+#define TXT_DECIDE_N "You can move now"
