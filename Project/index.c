@@ -400,7 +400,7 @@ int asc_KOSTKA(const void* a, const void* b) {
     return (*(KOSTKA_T*)a).value - (*(KOSTKA_T*)b).value;
 }
 
-MOVE_T check_A_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
+MOVE_T checkAcap(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     MOVE_T move;
     for (int j = 0; j < POLE_COUNT + 1; j++) {
         for (int i = 0; i < 4; i++) {
@@ -424,7 +424,7 @@ MOVE_T check_A_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     return move;
 }
 
-MOVE_T check_B_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
+MOVE_T checkBcap(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     MOVE_T move;
     for (int j = POLE_COUNT + 1; j > 0; j--) {
         for (int i = 0; i < 4; i++) {
@@ -448,7 +448,7 @@ MOVE_T check_B_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     return move;
 }
 
-int capture_possible(GAME_T* GAME, int gracz) {
+int cap_poss(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
 
     KOSTKA_T kostki[4];
@@ -459,22 +459,22 @@ int capture_possible(GAME_T* GAME, int gracz) {
     qsort(kostki, 4, sizeof(KOSTKA_T), asc_KOSTKA);
 
     if (gracz == PLAYER_A) {
-        if (check_A_capture(GAME, kolor, kostki).kostka != -1) {
+        if (checkAcap(GAME, kolor, kostki).kostka != -1) {
             return 1;
         }
         return 0;
 
     } else {
-        if (check_B_capture(GAME, kolor, kostki).kostka != -1) {
+        if (checkBcap(GAME, kolor, kostki).kostka != -1) {
             return 1;
         }
         return 0;
     }
 }
 
-int enforce_move(MOVE_T forced, MOVE_T move, int capture_flag, int gracz,
+int enforce_move(MOVE_T forced, MOVE_T move, int cap_f, int gracz,
                  GAME_T* GAME) {
-    if (capture_flag) {
+    if (cap_f) {
         if (move.kostka != forced.kostka) {
             info(GAME->controls.window, "Wrong dice", RED, gracz);
             pause();
@@ -599,7 +599,7 @@ void mu_move(WINDOW* win, GAME_T* GAME, int gracz, int st) {
     m_mov_m2(win, GAME, gracz, st, k, cel);
 }
 
-int can_take_home(GAME_T* GAME, int gracz) {
+int court_poss(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     int start = gracz == PLAYER_A ? 19 : 1;
     int i, suma = 0;
@@ -738,127 +738,132 @@ int is_better_home(GAME_T* GAME, MOVE_T move, int gracz) {
         return is_better_home_B(GAME, move, kostki, 1, gracz);
     }
 }
-
-void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
-    char kostki[50];
-    MOVE_T move, forced;
-    int bar_flag = 0, capture_flag = 0;
-    forced.kostka = -1;
-    int home_flag = can_take_home(GAME, gracz);
-
-    if (!move_possible(GAME, gracz) && !home_flag) {
-        info(window, TXT_MOVE_IMP, RED, gracz);
+int other(GAME_T* GAME, int gracz, int* forced_pionek, int* bar_f, int home_f) {
+    if (!move_possible(GAME, gracz) && !home_f) {
+        info(GAME->controls.window, TXT_MOVE_IMP, RED, gracz);
         pause();
         GAME->leftMoves = 0;
-        return;
+        return 1;
     }
-    // bar
     if (!bar_empty(GAME, gracz)) {
-        bar_flag = 1;
-        forced.pionek = gracz == PLAYER_A ? 0 : 25;
-        info(window, TXT_BAR_FULL, RED, gracz);
+        *bar_f = 1;
+        *forced_pionek = gracz == PLAYER_A ? 0 : 25;
+        info(GAME->controls.window, TXT_BAR_FULL, RED, gracz);
         pause();
     }
-    // end bar
-
-    // dwór
-    if (home_flag) {
-        info(window, TXT_HOME_POS, GREEN, gracz);
+    if (home_f) {
+        info(GAME->controls.window, TXT_HOME_POS, GREEN, gracz);
         pause();
     }
-
-    // end dwór
-
-    // capture
-    if (capture_possible(GAME, gracz)) {
-        KOSTKA_T kostki[4];
+    return 0;
+}
+void capture_module(GAME_T* GM, int g, MOVE_T* m, MOVE_T* f, int* cap_f,
+                    int bar_f) {
+    if (cap_poss(GM, g)) {
+        KOSTKA_T dice[4];
         for (int i = 0; i < 4; i++) {
-            kostki[i].value = GAME->dice[i];
-            kostki[i].index = i;
+            dice[i].value = GM->dice[i];
+            dice[i].index = i;
         }
-        qsort(kostki, 4, sizeof(KOSTKA_T), asc_KOSTKA);
+        qsort(dice, 4, sizeof(KOSTKA_T), asc_KOSTKA);
 
-        move = gracz == PLAYER_A ? check_A_capture(GAME, CLR_PLAYER_A, kostki)
-                                 : check_B_capture(GAME, CLR_PLAYER_B, kostki);
-        if (bar_flag) {
-            if (move.pionek == forced.pionek) {
-                forced.kostka = move.kostka;
-                capture_flag = 1;
-                info(window, TXT_CAP_POS, RED, gracz);
+        (*m) = g == PLAYER_A ? checkAcap(GM, CLR_PLAYER_A, dice)
+                             : checkBcap(GM, CLR_PLAYER_B, dice);
+        if (bar_f) {
+            if ((*m).pionek == (*f).pionek) {
+                (*f).kostka = (*m).kostka;
+                *cap_f = 1;
+                info(GM->controls.window, TXT_CAP_POS, RED, g);
                 pause();
             }
         } else {
-            forced.kostka = move.kostka;
-            forced.pionek = move.pionek;
-            capture_flag = 1;
-            info(window, TXT_CAP_POS, RED, gracz);
+            (*f).kostka = (*m).kostka;
+            (*f).pionek = (*m).pionek;
+            *cap_f = 1;
+            info(GM->controls.window, TXT_CAP_POS, RED, g);
             pause();
         }
     }
-    // end capture
-
-    // manual
-    move.kostka = -1;
-    do {
-        if (bar_flag) {
-            move.pionek = gracz == PLAYER_A ? 0 : 25;
-        } else {
-            info(window, TXT_M_PION, GREEN, gracz);
-            w_mvwprintw(3, 4, TXT_M_FIELD);
-            clearLine(3);
-            move.pionek = get_number(window, GAME, gracz);
-        }
-        int multi =
-            capture_flag || home_flag || bar_flag ? MULTI_OFF : MULTI_ON;
-        info(window, (multi ? TXT_M_DICE_M : TXT_M_DICE), GREEN, gracz);
-        w_mvwprintw(3, 4, TXT_M_DICE_INFO);
+    (*m).kostka = -1;
+}
+void enforce_module(GAME_T* GAME, MOVE_T* move, int cap_f, int gracz, int bar_f,
+                    int home_f) {
+    WINDOW* window = GAME->controls.window;
+    if (bar_f) {
+        (*move).pionek = gracz == PLAYER_A ? 0 : 25;
+    } else {
+        info(window, TXT_M_PION, GREEN, gracz);
+        w_mvwprintw(3, 4, TXT_M_FIELD);
         clearLine(3);
-        move.kostka = get_dice(GAME, gracz, multi, move.pionek);
-        if (move.kostka == -10) return;
-
-    } while (enforce_move(forced, move, capture_flag, gracz, GAME));
-    // end manual
-
-    // verify
-
+        (*move).pionek = get_number(window, GAME, gracz);
+    }
+    int multi = cap_f || home_f || bar_f ? MULTI_OFF : MULTI_ON;
+    info(window, (multi ? TXT_M_DICE_M : TXT_M_DICE), GREEN, gracz);
+    w_mvwprintw(3, 4, TXT_M_DICE_INFO);
+    clearLine(3);
+    (*move).kostka = get_dice(GAME, gracz, multi, (*move).pionek);
+}
+void move_comm(GAME_T* GAME, MOVE_T move, int gracz) {
+    WINDOW* window = GAME->controls.window;
+    char buffer[100];
+    if (move.pionek == 0 | move.pionek == 25) {
+        sprintf(buffer, TXT_POST_MOVE_BAR,
+                move.pionek + gracz_step(move.kostka - 1));
+    } else {
+        sprintf(buffer, TXT_POST_MOVE, move.pionek,
+                move.pionek + gracz_step(move.kostka - 1));
+    }
+    info(window, buffer, GREEN, gracz);
+}
+int verify_module(GAME_T* GAME, MOVE_T move, int gracz, int home_f) {
     int cel = move.pionek + gracz_step(move.kostka - 1);
-    if (home_flag && (cel > 24 || cel < 1))
+    WINDOW* win = GAME->controls.window;
+    if (home_f && (cel > 24 || cel < 1))
         cel = TRASH_FIELD;
     else if (cel > 24 || cel < 1) {
-        info(window, TXT_VER_4, ORANGE, gracz);
+        info(win, TXT_VER_4, ORANGE, gracz);
         pause();
-        return move_action(window, GAME, gracz);
+        return 2;
     }
 
     if (verify_move(GAME, move.pionek, cel, gracz, MULTI_OFF)) {
         pause();
-        return move_action(window, GAME, gracz);
+        return 2;
     }
 
-    if (home_flag) {
+    if (home_f) {
         if (!is_better_home(GAME, move, gracz)) {
-            info(window, TXT_BETTER_HOME, RED, gracz);
+            info(win, TXT_BETTER_HOME, RED, gracz);
             pause();
-            return move_action(window, GAME, gracz);
+            return 2;
         }
         if (cel == TRASH_FIELD) {
             move_to_home(GAME, move, gracz);
-            return;
+            return 1;
         }
     }
-    // end verify
+    return 0;
+}
+void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
+    MOVE_T move, forced;
+    int bar_f = 0, cap_f = 0;
+    forced.kostka = -1;
+    int home_f = court_poss(GAME, gracz);
 
-    // move
-    // start komunikat o ruchu
-    if (move.pionek == 0 | move.pionek == 25) {
-        sprintf(kostki, TXT_POST_MOVE_BAR,
-                move.pionek + gracz_step(move.kostka - 1));
-    } else {
-        sprintf(kostki, TXT_POST_MOVE, move.pionek,
-                move.pionek + gracz_step(move.kostka - 1));
-    }
-    info(window, kostki, GREEN, gracz);
-    // end komunikat o ruchu
+    if (other(GAME, gracz, &forced.pionek, &bar_f, home_f)) return;
+
+    capture_module(GAME, gracz, &move, &forced, &cap_f, bar_f);
+
+    do {
+        enforce_module(GAME, &move, cap_f, gracz, bar_f, home_f);
+        if (move.kostka == -10) return;
+    } while (enforce_move(forced, move, cap_f, gracz, GAME));
+
+    int valid = verify_module(GAME, move, gracz, home_f);
+    if (valid == 1) return;
+    if (valid == 2) return move_action(window, GAME, gracz);
+
+    move_comm(GAME, move, gracz);
     move_pionek(GAME, move, gracz);
     pause();
 }
