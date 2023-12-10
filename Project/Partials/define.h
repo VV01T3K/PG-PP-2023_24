@@ -155,7 +155,7 @@ typedef struct {
     char komunikat[MAX_LONG_STR];
     int rand_seed;
     int dublet;
-    int pozostałe_ruchy;
+    int leftMoves;
     char ruchy[MAX_LONG_STR];
     int home_news;
     int turn;

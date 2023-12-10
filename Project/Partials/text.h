@@ -1,7 +1,7 @@
-#define TXT_VERIFY_1 "You have to choose your field!"
-#define TXT_VERIFY_2 "You have to choose field with pieces!"
-#define TXT_VERIFY_3 "You have to choose conquerable field!"
-#define TXT_VERIFY_4 "You can't move to home"
+#define TXT_VER_1 "You have to choose your field!"
+#define TXT_VER_2 "You have to choose field with pieces!"
+#define TXT_VER_3 "You have to choose conquerable field!"
+#define TXT_VER_4 "You can't move to home"
 #define TXT_CAPTURE "Ładne bicie"
 #define TXT_MOVE_IMP "You have to  skip (no legal moves)! [ANY]"
 #define TXT_BAR_FULL "You have to  move all pieces from bar! (ANY)"
@@ -57,3 +57,6 @@
 #define TXT_REPLAY_3 "Going to step: %d"
 
 #define TXT_NAME "Enter your name:"
+
+#define TXT_MUST_MOVE "You have to move!"
+#define TXT_MUST_SKIP "You have to skip!"

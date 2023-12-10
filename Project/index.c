@@ -44,7 +44,7 @@ void paint_STATE(WINDOW* window, GAME_T* GAME) {
     mvwprintw(window, 5, 13, "Nr %d", GAME->turn);
 
     watrr(A_BOLD, w_mvwprintw(6, 5, "MOVES LEFT:"););
-    mvwprintw(window, 6, 18, "%d", GAME->pozostałe_ruchy);
+    mvwprintw(window, 6, 18, "%d", GAME->leftMoves);
 
     wmove(window, 7, 4);
     for (int i = 0; i < 18; i++) w_wprintw(HR);
@@ -225,7 +225,7 @@ void conclude(GAME_T* GAME) {
     save_fame(GAME, name, points);
 }
 
-int decide_controls(WINDOW* window, GAME_T* GAME) {
+int decide_ctrls(WINDOW* window, GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) / 2, 4, TXT_CONTROLS);
     clearLine(getmaxy(window) / 2);
     W_GETNSTR_IN(1, 2, CONTROLS_PADD);
@@ -249,16 +249,16 @@ int decide_controls(WINDOW* window, GAME_T* GAME) {
             break;
         default:
             w_wprintw(TXT_WRONG);
-            return decide_controls(window, GAME);
+            return decide_ctrls(window, GAME);
             break;
     }
     char ch = wgetch(window);
-    if (ch != '\n') return decide_controls(window, GAME);
+    if (ch != '\n') return decide_ctrls(window, GAME);
     clearLine(2);
     return tolower(in[0]);
 }
 
-void comms(WINDOW* window, char* str, int kolor, int gracz) {
+void info(WINDOW* window, char* str, int kolor, int gracz) {
     wmove(window, 1, 2);
     clearLine(1);
     if (gracz == -1) {
@@ -298,47 +298,49 @@ int get_number(WINDOW* window, GAME_T* GAME, int gracz) {
     return result;
 }
 
-int get_dice(WINDOW* window, GAME_T* GAME, int gracz, int multi, int start) {
+int get_dice(GAME_T* GAME, int gracz, int multi, int start) {
+    WINDOW* window = GAME->controls.window;
     W_GETNSTR_IN(1, 2, CONTROLS_PADD)
-    if (in[0] == 'm' && multi == MULTI_ON) {
+
+    if (in[0] == 'm' && multi) {
         multi_move(window, GAME, gracz, start);
         return -10;
     }
-    int result = atoi(in);
-    if (result < 1 || result > (GAME->dice[3] != -1 ? 4 : 2)) {
+    int out = atoi(in);
+    if (out < 1 || out > (GAME->dice[3] != -1 ? 4 : 2)) {
         w_wprintw(TXT_WRONG);
         clearLine(2);
-        return get_dice(window, GAME, gracz, multi, start);
+        return get_dice(GAME, gracz, multi, start);
     }
-    if (GAME->dice[result - 1] == 0) {
+    if (GAME->dice[out - 1] == 0) {
         w_wprintw(TXT_DICE_USED);
-        return get_dice(window, GAME, gracz, multi, start);
+        return get_dice(GAME, gracz, multi, start);
     }
 
-    wprintw(window, TXT_DICE_NR, result);
+    wprintw(window, TXT_DICE_NR, out);
     wrefresh(window);
     char ch = wgetch(window);
-    if (ch != '\n') return get_dice(window, GAME, gracz, multi, start);
+    if (ch != '\n') return get_dice(GAME, gracz, multi, start);
     clearLine(2);
-    return result;
+    return out;
 }
 void move_pionek(GAME_T* GAME, MOVE_T move, int gracz) {
     int pionek = move.pionek, kostka = move.kostka;
     int cel = pionek + gracz_step(kostka - 1);
+    POLE_T* p_cel = &(GAME->plansza.pole[cel]);
     if (gracz == PLAYER_A) {
         GAME->plansza.pole[pionek].liczba--;
-        GAME->plansza.pole[cel].liczba++;
-        GAME->plansza.pole[cel].kolor = CLR_PLAYER_A;
-
+        p_cel->liczba++;
+        p_cel->kolor = CLR_PLAYER_A;
     } else {
         GAME->plansza.pole[pionek].liczba--;
-        GAME->plansza.pole[cel].liczba++;
-        GAME->plansza.pole[cel].kolor = CLR_PLAYER_B;
+        p_cel->liczba++;
+        p_cel->kolor = CLR_PLAYER_B;
     }
     GAME->dice[kostka - 1] = 0;
     paint_DICE(GAME->ui_2.window, GAME);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
-    GAME->pozostałe_ruchy--;
+    GAME->leftMoves--;
     paint_STATE(GAME->aside.window, GAME);
     save_move(GAME, pionek, cel);
 }
@@ -355,25 +357,24 @@ void capture(GAME_T* GAME, int docelowe, int gracz) {
 }
 int verify_move(GAME_T* GAME, int start, int cel, int gracz, int multi) {
     WINDOW* win = GAME->controls.window;
-    int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
-    if (GAME->plansza.pole[start].kolor != kolor) {
-        comms(win, TXT_VERIFY_1, RED, gracz);
+    int clr = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
+    POLE_T* p_cel = &(GAME->plansza.pole[cel]);
+    if (GAME->plansza.pole[start].kolor != clr) {
+        info(win, TXT_VER_1, RED, gracz);
         return 1;
     }
     if (GAME->plansza.pole[start].liczba == 0) {
-        comms(win, TXT_VERIFY_2, RED, gracz);
+        info(win, TXT_VER_2, RED, gracz);
         return 1;
     }
-    if (GAME->plansza.pole[cel].kolor != kolor &&
-        GAME->plansza.pole[cel].liczba > 1) {
-        comms(win, TXT_VERIFY_3, RED, gracz);
+    if (p_cel->kolor != clr && p_cel->liczba > 1) {
+        info(win, TXT_VER_3, RED, gracz);
         return 1;
     }
-    if (GAME->plansza.pole[cel].kolor != kolor &&
-        GAME->plansza.pole[cel].liczba == 1) {
+    if (p_cel->kolor != clr && p_cel->liczba == 1) {
         if (multi == MULTI_OFF) {
             capture(GAME, cel, gracz);
-            comms(win, TXT_CAPTURE, GREEN, gracz);
+            info(win, TXT_CAPTURE, GREEN, gracz);
             pause();
         }
     }
@@ -476,12 +477,12 @@ int enforce_move(MOVE_T forced, MOVE_T move, int capture_flag, int gracz,
                  GAME_T* GAME) {
     if (capture_flag) {
         if (move.kostka != forced.kostka) {
-            comms(GAME->controls.window, "Wrong dice", RED, gracz);
+            info(GAME->controls.window, "Wrong dice", RED, gracz);
             pause();
             return 1;
         }
         if (move.pionek != forced.pionek) {
-            comms(GAME->controls.window, "Wrong field", RED, gracz);
+            info(GAME->controls.window, "Wrong field", RED, gracz);
             pause();
             return 1;
         }
@@ -539,7 +540,7 @@ int move_possible(GAME_T* GAME, int gracz) {
 }
 
 void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start) {
-    comms(window, "CHOOSE DICES [np.: 2+1+3]", GREEN, gracz);
+    info(window, "CHOOSE DICES [np.: 2+1+3]", GREEN, gracz);
     W_GETNSTR_IN(7, 2, CONTROLS_PADD);
     int kostki[4] = {0};
     char* split = strtok(in, "+");
@@ -586,7 +587,7 @@ void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start) {
         cel += gracz_step(kostki[i] - 1);
         verify_move(GAME, start, cel, gracz, MULTI_ON);
         GAME->dice[kostki[i] - 1] = 0;
-        GAME->pozostałe_ruchy--;
+        GAME->leftMoves--;
         save_move(GAME, prev, cel);
     }
     paint_DICE(GAME->ui_2.window, GAME);
@@ -617,7 +618,7 @@ void move_to_home(GAME_T* GAME, MOVE_T move, int gracz) {
     if (GAME->plansza.pole[start].liczba == 0)
         GAME->plansza.pole[start].kolor = 0;
     (*home)++;
-    GAME->pozostałe_ruchy--;
+    GAME->leftMoves--;
     GAME->dice[move.kostka - 1] = 0;
     GAME->home_news++;
     save_move(GAME, start, TRASH_FIELD);
@@ -741,23 +742,23 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
     int home_flag = can_take_home(GAME, gracz);
 
     if (!move_possible(GAME, gracz) && !home_flag) {
-        comms(window, TXT_MOVE_IMP, RED, gracz);
+        info(window, TXT_MOVE_IMP, RED, gracz);
         pause();
-        GAME->pozostałe_ruchy = 0;
+        GAME->leftMoves = 0;
         return;
     }
     // bar
     if (!bar_empty(GAME, gracz)) {
         bar_flag = 1;
         forced.pionek = gracz == PLAYER_A ? 0 : 25;
-        comms(window, TXT_BAR_FULL, RED, gracz);
+        info(window, TXT_BAR_FULL, RED, gracz);
         pause();
     }
     // end bar
 
     // dwór
     if (home_flag) {
-        comms(window, TXT_HOME_POS, GREEN, gracz);
+        info(window, TXT_HOME_POS, GREEN, gracz);
         pause();
     }
 
@@ -778,14 +779,14 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
             if (move.pionek == forced.pionek) {
                 forced.kostka = move.kostka;
                 capture_flag = 1;
-                comms(window, TXT_CAP_POS, RED, gracz);
+                info(window, TXT_CAP_POS, RED, gracz);
                 pause();
             }
         } else {
             forced.kostka = move.kostka;
             forced.pionek = move.pionek;
             capture_flag = 1;
-            comms(window, TXT_CAP_POS, RED, gracz);
+            info(window, TXT_CAP_POS, RED, gracz);
             pause();
         }
     }
@@ -797,17 +798,17 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
         if (bar_flag) {
             move.pionek = gracz == PLAYER_A ? 0 : 25;
         } else {
-            comms(window, TXT_M_PION, GREEN, gracz);
+            info(window, TXT_M_PION, GREEN, gracz);
             w_mvwprintw(3, 4, TXT_M_FIELD);
             clearLine(3);
             move.pionek = get_number(window, GAME, gracz);
         }
         int multi =
             capture_flag || home_flag || bar_flag ? MULTI_OFF : MULTI_ON;
-        comms(window, (multi ? TXT_M_DICE_M : TXT_M_DICE), GREEN, gracz);
+        info(window, (multi ? TXT_M_DICE_M : TXT_M_DICE), GREEN, gracz);
         w_mvwprintw(3, 4, TXT_M_DICE_INFO);
         clearLine(3);
-        move.kostka = get_dice(window, GAME, gracz, multi, move.pionek);
+        move.kostka = get_dice(GAME, gracz, multi, move.pionek);
         if (move.kostka == -10) return;
 
     } while (enforce_move(forced, move, capture_flag, gracz, GAME));
@@ -819,7 +820,7 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
     if (home_flag && (cel > 24 || cel < 1))
         cel = TRASH_FIELD;
     else if (cel > 24 || cel < 1) {
-        comms(window, TXT_VERIFY_4, ORANGE, gracz);
+        info(window, TXT_VER_4, ORANGE, gracz);
         pause();
         return move_action(window, GAME, gracz);
     }
@@ -831,7 +832,7 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
 
     if (home_flag) {
         if (!is_better_home(GAME, move, gracz)) {
-            comms(window, TXT_BETTER_HOME, RED, gracz);
+            info(window, TXT_BETTER_HOME, RED, gracz);
             pause();
             return move_action(window, GAME, gracz);
         }
@@ -851,7 +852,7 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
         sprintf(kostki, TXT_POST_MOVE, move.pionek,
                 move.pionek + gracz_step(move.kostka - 1));
     }
-    comms(window, kostki, GREEN, gracz);
+    info(window, kostki, GREEN, gracz);
     // end komunikat o ruchu
     move_pionek(GAME, move, gracz);
     pause();
@@ -875,33 +876,32 @@ int check_win(GAME_T* GAME) {
     }
     return 0;
 }
-int turn(WINDOW* window, GAME_T* GAME, int gracz) {
+int turn(WINDOW* win, GAME_T* GAME, int gracz) {
     GAME->turn++;
-    comms(window, GAME->komunikat, GREEN, gracz);
-    wrefresh(window);
-    while (decide_controls(window, GAME) != 'r')
-        comms(window, TXT_DECIDE_R, RED, gracz);
+    info(win, GAME->komunikat, GREEN, gracz);
+    wrefresh(win);
+    while (decide_ctrls(win, GAME) != 'r') info(win, TXT_DECIDE_R, RED, gracz);
 
-    GAME->pozostałe_ruchy = roll(GAME);
+    GAME->leftMoves = roll(GAME);
     paint_STATE(GAME->aside.window, GAME);
-    while (GAME->pozostałe_ruchy > 0) {
-        comms(window, TXT_DECIDE_M, GREEN, gracz);
-        while (decide_controls(window, GAME) != 'm')
-            comms(window, "You have to move", ORANGE, gracz);
+    while (GAME->leftMoves > 0) {
+        info(win, TXT_DECIDE_M, GREEN, gracz);
+        while (decide_ctrls(win, GAME) != 'm')
+            info(win, TXT_MUST_MOVE, ORANGE, gracz);
 
-        move_action(window, GAME, gracz);
+        move_action(win, GAME, gracz);
         if (check_win(GAME)) return check_win(GAME);
     }
-    comms(window, TXT_DECIDE_S, GREEN, gracz);
-    while (decide_controls(window, GAME) != 's')
-        comms(window, "You have to skip", ORANGE, gracz);
+    info(win, TXT_DECIDE_S, GREEN, gracz);
+    while (decide_ctrls(win, GAME) != 's')
+        info(win, TXT_MUST_SKIP, ORANGE, gracz);
     return 0;
 }
 int start_next(GAME_T* GAME, int gracz) {
     WINDOW* window = GAME->controls.window;
-    comms(window, TXT_START_NEXT, GREEN, gracz);
-    while (decide_controls(window, GAME) != 'n')
-        comms(window, TXT_START_NEXT, ORANGE, gracz);
+    info(window, TXT_START_NEXT, GREEN, gracz);
+    while (decide_ctrls(window, GAME) != 'n')
+        info(window, TXT_START_NEXT, ORANGE, gracz);
     return 1;
 }
 void gameplay(GAME_T* GAME, int gracz) {
@@ -935,10 +935,10 @@ void paint_GAMEVIEW(GAME_T* GAME) {
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 void starting_roll(GAME_T* GAME, WINDOW* window, int gracz) {
-    comms(window, TXT_START_ROLL, GREEN, gracz);
+    info(window, TXT_START_ROLL, GREEN, gracz);
     wrefresh(window);
-    while (decide_controls(window, GAME) != 'r') {
-        comms(window, TXT_START_ROLL, RED, gracz);
+    while (decide_ctrls(window, GAME) != 'r') {
+        info(window, TXT_START_ROLL, RED, gracz);
     }
     GAME->dice[gracz - 1] = rand() % 6 + 1;
     paint_DICE(GAME->ui_2.window, GAME);
@@ -949,15 +949,15 @@ int who_starts(GAME_T* GAME) {
     starting_roll(GAME, window, PLAYER_A);
     starting_roll(GAME, window, PLAYER_B);
     if (GAME->dice[0] > GAME->dice[1]) {
-        comms(window, TXT_START_PLAYER_A, GREEN, PLAYER_A);
+        info(window, TXT_START_PLAYER_A, GREEN, PLAYER_A);
         pause();
         return PLAYER_A;
     } else if (GAME->dice[0] < GAME->dice[1]) {
-        comms(window, TXT_START_PLAYER_B, GREEN, PLAYER_B);
+        info(window, TXT_START_PLAYER_B, GREEN, PLAYER_B);
         pause();
         return PLAYER_B;
     } else {
-        comms(window, "Roll again", GREEN, PLAYER_A);
+        info(window, "Roll again", GREEN, PLAYER_A);
         pause();
         return who_starts(GAME);
     }
@@ -978,6 +978,28 @@ void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz) {
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 
+void load_module(FILE* file, GAME_T* GAME, char c, char buffer[2][3],
+                 int* gracz, int* home, int* lines) {
+    if (c == '\n') {
+        (*lines)++;
+        fscanf(file, "->%d%c %d", &GAME->turn, &c, home);
+        if (c == 'A') {
+            *gracz = PLAYER_A;
+            GAME->plansza.dwor.gracz_A += *home;
+        } else if (c == 'B') {
+            *gracz = PLAYER_B;
+            GAME->plansza.dwor.gracz_B += *home;
+        }
+    }
+    if (c == 'm') {
+        int pionek, cel;
+        fscanf(file, "%s %s", buffer[0], buffer[1]);
+        pionek = atoi(buffer[0]);
+        cel = atoi(buffer[1]);
+        crud_move_pionek(GAME, pionek, cel, *gracz);
+    }
+}
+
 int load_save(GAME_T* GAME, FILE* file, int recur, int limit) {
     initGame(GAME);
     int lines = 0;
@@ -990,24 +1012,8 @@ int load_save(GAME_T* GAME, FILE* file, int recur, int limit) {
     refresh();
     int gracz = 0, home;
     while (fscanf(file, "%c", &c) != EOF && (lines < limit - 1 || limit < 0)) {
-        if (c == '\n') {
-            lines++;
-            fscanf(file, "->%d%c %d", &GAME->turn, &c, &home);
-            if (c == 'A') {
-                gracz = PLAYER_A;
-                GAME->plansza.dwor.gracz_A += home;
-            } else if (c == 'B') {
-                gracz = PLAYER_B;
-                GAME->plansza.dwor.gracz_B += home;
-            }
-        }
-        if (c == 'm') {
-            int pionek, cel;
-            fscanf(file, "%s %s", buffer[0], buffer[1]);
-            pionek = atoi(buffer[0]);
-            cel = atoi(buffer[1]);
-            crud_move_pionek(GAME, pionek, cel, gracz);
-        }
+        load_module(file, GAME, c, buffer, &gracz, &home, &lines);
+
         if (c == 'S') {
             return load_save(GAME, file, 1, limit - lines);
         }
@@ -1022,12 +1028,12 @@ void exec_win(GAME_T* GAME, int points) {
     GAME->ended = 1;
     char buffer[50];
     sprintf(buffer, "Player %s won! [ANY]", gracz == PLAYER_A ? "A" : "B");
-    comms(GAME->controls.window, buffer, ORANGE, gracz);
+    info(GAME->controls.window, buffer, ORANGE, gracz);
     pause();
     if (start_next(GAME, gracz)) {
         initGame(GAME);
         paint_GAMEVIEW(GAME);
-        comms(GAME->controls.window, "NEW GAME [ANY]", GREEN, gracz);
+        info(GAME->controls.window, "NEW GAME [ANY]", GREEN, gracz);
         pause();
         int gracz = who_starts(GAME);
         gracz = PLAYER_A;
@@ -1074,17 +1080,11 @@ int decide_replay(WINDOW* window, GAME_T* GAME) {
     return result;
 }
 
-void replay(GAME_T* GAME, FILE* file, int curr, int limit) {
-    curr < 1 ? curr = limit : curr;
-    curr > limit ? curr = 1 : curr;
-    rewind(file);
-    int g = load_save(GAME, file, 1, curr);
-    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
-    paint_STATE(GAME->aside.window, GAME);
-    WINDOW* window = GAME->controls.window;
+int replay_interact(WINDOW* window, GAME_T* GAME, int curr, int limit,
+                    int gracz) {
     char buffer[50];
     sprintf(buffer, TXT_REPLAY_1, curr, limit);
-    comms(window, buffer, GREEN, -1);
+    info(window, buffer, GREEN, -1);
     switch (decide_replay(window, GAME)) {
         case 1:
             curr++;
@@ -1093,22 +1093,36 @@ void replay(GAME_T* GAME, FILE* file, int curr, int limit) {
             curr--;
             break;
         case 3:
-            comms(window, TXT_REPLAY_2, BLUE, -1);
+            info(window, TXT_REPLAY_2, BLUE, -1);
             curr = get_number(window, GAME, -1);
             sprintf(buffer, TXT_REPLAY_3, curr);
-            comms(window, buffer, CYAN, -1);
+            info(window, buffer, CYAN, -1);
             pause();
             clearLine(3);
             w_mvwprintw(2, getmaxx(window) - 1, "│");
             break;
         case 4:
-            gameplay(GAME, g);
-            return;
+            gameplay(GAME, gracz);
+            return curr;
 
         default:
             break;
     }
-    wrefresh(window);
+    return curr;
+}
+
+void replay(GAME_T* GAME, FILE* file, int curr, int limit) {
+    curr < 1 ? curr = limit : curr;
+    curr > limit ? curr = 1 : curr;
+    rewind(file);
+    int gracz = load_save(GAME, file, 1, curr);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+    paint_STATE(GAME->aside.window, GAME);
+    WINDOW* win = GAME->controls.window;
+
+    curr = replay_interact(win, GAME, curr, limit, gracz);
+
+    wrefresh(win);
     replay(GAME, file, curr, limit);
 }
 int count_lines(FILE* file) {
@@ -1119,6 +1133,15 @@ int count_lines(FILE* file) {
     }
     rewind(file);
     return lines;
+}
+void run_replay(GAME_T* GAME) {
+    paint_GAMEVIEW(GAME);
+    FILE* file3 = fopen(SAVE_PATH, "r+");
+    int limit = count_lines(file3);
+    info(GAME->controls.window, TXT_REPLAY_0, GREEN, -1);
+    pause();
+    replay(GAME, file3, 1, limit);
+    fclose(file3);
 }
 void run(GAME_T* GAME) {
     int gracz;
@@ -1132,9 +1155,9 @@ void run(GAME_T* GAME) {
             clear_save();
             initGame(GAME);
             paint_GAMEVIEW(GAME);
-            gracz = PLAYER_A;
-            gracz = PLAYER_B;
-            // gracz = who_starts(GAME);
+            // gracz = PLAYER_A;
+            // gracz = PLAYER_B;
+            gracz = who_starts(GAME);
             initGame(GAME);
             save_game(GAME);
             gameplay(GAME, gracz);
@@ -1147,13 +1170,7 @@ void run(GAME_T* GAME) {
             gameplay(GAME, gracz);
             break;
         case 3:
-            paint_GAMEVIEW(GAME);
-            FILE* file3 = fopen(SAVE_PATH, "r+");
-            int limit = count_lines(file3);
-            comms(GAME->controls.window, TXT_REPLAY_0, GREEN, -1);
-            pause();
-            replay(GAME, file3, 1, limit);
-            fclose(file3);
+            run_replay(GAME);
             break;
 
         default:
@@ -1193,7 +1210,7 @@ void placePionki(GAME_T* GAME) {
 }
 void RESET_GAME(GAME_T* GAME) {
     GAME->ended = 0;
-    GAME->pozostałe_ruchy = 0;
+    GAME->leftMoves = 0;
     GAME->turn = 0;
     GAME->home_news = 0;
 
