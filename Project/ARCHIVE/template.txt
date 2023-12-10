@@ -1,5 +1,7 @@
-Dwór: A 13 B 0
+Dwór: A 0 B 13
 Banda: A 0 B 0
 
-19 1 A
-24 1 A
+7 1 B
+6 1 B
+5 2 A
+3 2 A

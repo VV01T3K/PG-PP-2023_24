@@ -885,14 +885,14 @@ int turn(WINDOW* window, GAME_T* GAME, int gracz) {
     while (GAME->pozostałe_ruchy > 0) {
         comms(window, TXT_DECIDE_M, GREEN, gracz);
         while (decide_controls(window, GAME) != 'm')
-            comms(window, "move", RED, gracz);
+            comms(window, "You have to move", ORANGE, gracz);
 
         move_action(window, GAME, gracz);
         if (check_win(GAME)) return check_win(GAME);
     }
     comms(window, TXT_DECIDE_S, GREEN, gracz);
     while (decide_controls(window, GAME) != 's')
-        comms(window, "skip", RED, gracz);
+        comms(window, "You have to skip", ORANGE, gracz);
     return 0;
 }
 int start_next(GAME_T* GAME, int gracz) {
@@ -1129,7 +1129,7 @@ void run(GAME_T* GAME) {
             initGame(GAME);
             paint_GAMEVIEW(GAME);
             gracz = PLAYER_A;
-            // gracz = PLAYER_B;
+            gracz = PLAYER_B;
             // gracz = who_starts(GAME);
             initGame(GAME);
             save_game(GAME);
