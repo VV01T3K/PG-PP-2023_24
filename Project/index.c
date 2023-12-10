@@ -1075,10 +1075,10 @@ int decide_replay(WINDOW* window, GAME_T* GAME) {
 }
 
 void replay(GAME_T* GAME, FILE* file, int curr, int limit) {
-    curr < 0 ? curr = limit : curr;
-    curr > limit ? curr = 0 : curr;
+    curr < 1 ? curr = limit : curr;
+    curr > limit ? curr = 1 : curr;
     rewind(file);
-    int g = load_save(GAME, file, 0, curr);
+    int g = load_save(GAME, file, 1, curr);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
     paint_STATE(GAME->aside.window, GAME);
     WINDOW* window = GAME->controls.window;
@@ -1152,7 +1152,7 @@ void run(GAME_T* GAME) {
             int limit = count_lines(file3);
             comms(GAME->controls.window, TXT_REPLAY_0, GREEN, -1);
             pause();
-            replay(GAME, file3, 0, limit);  // 0 -> start
+            replay(GAME, file3, 1, limit);
             fclose(file3);
             break;
 
