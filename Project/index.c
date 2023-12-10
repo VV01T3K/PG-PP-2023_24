@@ -1121,26 +1121,14 @@ void placePionki(GAME_T* GAME) {
         GAME->plansza.pole[pionki[i].index].kolor = pionki[i].kolor;
     }
 }
-
-void initGame(GAME_T* GAME) {
+void RESET_GAME(GAME_T* GAME) {
     GAME->ended = 0;
     GAME->pozostałe_ruchy = 0;
     GAME->turn = 0;
-    GAME->rand_seed = time(NULL);
-    srand(GAME->rand_seed);
-    move(0, strlen(TXT_AUTHOR));
-    printw(" | SEED: %d", GAME->rand_seed);
-    refresh();
     GAME->home_news = 0;
-    for (int i = 1; i < POLE_COUNT + 1; i++) {
-        GAME->plansza.pole[i].liczba = 0;
-        GAME->plansza.pole[i].kolor = 0;
-        GAME->plansza.pole[i].number = i;
-    }
-    placePionki(GAME);
+
     BAR_PLAYER_A.liczba = 0;
     BAR_PLAYER_B.liczba = 0;
-
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
@@ -1151,6 +1139,22 @@ void initGame(GAME_T* GAME) {
     GAME->dice[1] = -1;
     GAME->dice[2] = -1;
     GAME->dice[3] = -1;
+}
+void initGame(GAME_T* GAME) {
+    GAME->rand_seed = time(NULL);
+    srand(GAME->rand_seed);
+    move(0, strlen(TXT_AUTHOR));
+    printw(" | SEED: %d", GAME->rand_seed);
+    refresh();
+
+    for (int i = 1; i < POLE_COUNT + 1; i++) {
+        GAME->plansza.pole[i].liczba = 0;
+        GAME->plansza.pole[i].kolor = 0;
+        GAME->plansza.pole[i].number = i;
+    }
+    placePionki(GAME);
+
+    RESET_GAME(GAME);
 
     strcpy(GAME->komunikat, TXT_TURN);
 }
