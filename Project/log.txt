@@ -1,4 +1,0 @@
-Cel: 1 Pole: 0
-Cel: 4 Pole: 0
-Cel: 1 Pole: 0
-Cel: 1 Pole: 0

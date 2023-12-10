@@ -161,8 +161,8 @@ int decide_menu(WINDOW* window, GAME_T* GAME) {
 
 int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
-    GAME->dice[0] = 4;
-    GAME->dice[1] = 1;
+    GAME->dice[0] = 1;
+    GAME->dice[1] = 2;
     // GAME->dice[0] = rand() % 6 + 1;
     // GAME->dice[1] = rand() % 6 + 1;
 
@@ -402,9 +402,9 @@ int asc_KOSTKA(const void* a, const void* b) {
 
 MOVE_T check_A_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     MOVE_T move;
-    for (int i = 0; i < 4; i++) {
-        if (copy[i].value < 1) continue;
-        for (int j = 0; j < POLE_COUNT + 1; j++) {
+    for (int j = 0; j < POLE_COUNT + 1; j++) {
+        for (int i = 0; i < 4; i++) {
+            if (copy[i].value < 1) continue;
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
                 int cel = j + copy[i].value;
@@ -418,6 +418,7 @@ MOVE_T check_A_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
             }
         }
     }
+
     move.kostka = -1;
     move.pionek = -1;
     return move;
@@ -425,9 +426,9 @@ MOVE_T check_A_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
 
 MOVE_T check_B_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     MOVE_T move;
-    for (int i = 0; i < 4; i++) {
-        if (copy[i].value < 1) continue;
-        for (int j = POLE_COUNT; j > 0; j--) {
+    for (int j = POLE_COUNT + 1; j > 0; j--) {
+        for (int i = 0; i < 4; i++) {
+            if (copy[i].value < 1) continue;
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
                 int docelowe = j - copy[i].value;
@@ -441,6 +442,7 @@ MOVE_T check_B_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
             }
         }
     }
+
     move.kostka = -1;
     move.pionek = -1;
     return move;
@@ -509,7 +511,7 @@ int check_A_moves(GAME_T* GAME, int kolor, int kostki[4]) {
 int check_B_moves(GAME_T* GAME, int kolor, int kostki[4]) {
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
-        for (int j = POLE_COUNT; j > 0; j--) {
+        for (int j = POLE_COUNT + 1; j > 0; j--) {
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
                 int docelowe = j - kostki[i];
@@ -724,7 +726,6 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
 
         move = gracz == PLAYER_A ? check_A_capture(GAME, CLR_PLAYER_A, kostki)
                                  : check_B_capture(GAME, CLR_PLAYER_B, kostki);
-
         if (bar_flag) {
             if (move.pionek == forced.pionek) {
                 forced.kostka = move.kostka;
@@ -745,7 +746,9 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
     // manual
     move.kostka = -1;
     do {
-        if (!bar_flag) {
+        if (bar_flag) {
+            move.pionek = gracz == PLAYER_A ? 0 : 25;
+        } else {
             comms(window, TXT_M_PION, GREEN, gracz);
             w_mvwprintw(3, 4, TXT_M_FIELD);
             clearLine(3);
@@ -760,7 +763,6 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
         if (move.kostka == -10) return;
 
     } while (enforce_move(forced, move, capture_flag, gracz, GAME));
-
     // end manual
 
     // verify
@@ -1078,7 +1080,8 @@ void run(GAME_T* GAME) {
             clear_save();
             initGame(GAME);
             paint_GAMEVIEW(GAME);
-            gracz = PLAYER_A;
+            // gracz = PLAYER_A;
+            gracz = PLAYER_B;
             // gracz = who_starts(GAME);
             initGame(GAME);
             save_game(GAME);
@@ -1106,24 +1109,35 @@ void run(GAME_T* GAME) {
     }
 }
 
-void placePionki(GAME_T* GAME) {
-    // struct {
-    //     int index, liczba, kolor;
-    // } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
-    //               {8, 3, CLR_PLAYER_B},  {12, 5, CLR_PLAYER_A},
-    //               {13, 5, CLR_PLAYER_B}, {17, 3, CLR_PLAYER_A},
-    //               {19, 5, CLR_PLAYER_A}, {24, 2, CLR_PLAYER_B}};
-    struct {
-        int index, liczba, kolor;
-    } pionki[] = {
-        {1, 1, CLR_PLAYER_B}, {2, 1, CLR_PLAYER_A}, {3, 1, CLR_PLAYER_B},
-        {4, 1, CLR_PLAYER_B}, {5, 1, CLR_PLAYER_B}, {6, 1, CLR_PLAYER_B},
-    };
-
-    for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
+void pioneczki(GAME_T* GAME, PIONKI_T pionki[POLE_COUNT]) {
+    for (int i = 0; i < POLE_COUNT; i++) {
+        if (pionki[i].index == -1) break;
         GAME->plansza.pole[pionki[i].index].liczba = pionki[i].liczba;
         GAME->plansza.pole[pionki[i].index].kolor = pionki[i].kolor;
     }
+}
+
+void placePionki(GAME_T* GAME) {
+    PIONKI_T pionki[POLE_COUNT];
+
+    FILE* file = fopen(TEMPLATE_PATH, "r");
+    fscanf(file, "Dwór: A %d B %d\n", &GAME->plansza.dwor.gracz_A,
+           &GAME->plansza.dwor.gracz_B);
+    fscanf(file, "Banda: A %d B %d\n\n", &BAR_PLAYER_A.liczba,
+           &BAR_PLAYER_B.liczba);
+    char c;
+    for (int i = 0; i < POLE_COUNT; i++) {
+        if (fscanf(file, "%d %d %c\n", &pionki[i].index, &pionki[i].liczba,
+                   &c) == EOF) {
+            pionki[i].index = -1;
+            continue;
+        }
+        pionki[i].kolor = c == 'A' ? CLR_PLAYER_A : CLR_PLAYER_B;
+    }
+
+    fclose(file);
+
+    pioneczki(GAME, pionki);
 }
 void RESET_GAME(GAME_T* GAME) {
     GAME->ended = 0;
@@ -1132,11 +1146,11 @@ void RESET_GAME(GAME_T* GAME) {
     GAME->home_news = 0;
 
     BAR_PLAYER_A.liczba = 2;
-    BAR_PLAYER_B.liczba = 1;
+    BAR_PLAYER_B.liczba = 2;
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 0;
+    GAME->plansza.dwor.gracz_A = 12;
     GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;
@@ -1156,9 +1170,9 @@ void initGame(GAME_T* GAME) {
         GAME->plansza.pole[i].kolor = 0;
         GAME->plansza.pole[i].number = i;
     }
-    placePionki(GAME);
-
     RESET_GAME(GAME);
+
+    placePionki(GAME);
 
     strcpy(GAME->komunikat, TXT_TURN);
 }

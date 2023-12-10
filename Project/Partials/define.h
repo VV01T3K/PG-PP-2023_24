@@ -40,6 +40,7 @@
 // FILE PATHS
 #define FAME_PATH "ARCHIVE/fame.txt"
 #define SAVE_PATH "ARCHIVE/save.txt"
+#define TEMPLATE_PATH "ARCHIVE/template.txt"
 
 // Znaki
 // #define BLOCK "\u25A7"
@@ -170,3 +171,7 @@ typedef struct {
     int index;
     int value;
 } KOSTKA_T;
+
+typedef struct {
+    int index, liczba, kolor;
+} PIONKI_T;

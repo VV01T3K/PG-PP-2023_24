@@ -41,7 +41,7 @@
 
 #define TXT_CONTROLS "R(oll) | M(ove) | S(kip) | E(xit)"
 
-#define TXT_HOME_POS "You can move to home! [ANY]"
+#define TXT_HOME_POS "You can move to court! [ANY]"
 
 #define TXT_BETTER_HOME "You have to choose optimal move!"
 
