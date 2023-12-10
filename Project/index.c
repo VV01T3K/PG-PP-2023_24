@@ -56,8 +56,8 @@ int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
-    GAME->dice[0] = 6;
-    GAME->dice[1] = 6;
+    // GAME->dice[0] = 6;
+    // GAME->dice[1] = 6;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
