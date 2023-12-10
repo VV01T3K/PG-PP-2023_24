@@ -1,11 +1,8 @@
 Dwór: A 0 B 0
-Banda: A 0 B 0
-
-1 2 A
-6 5 B
-8 3 B
-12 5 A
-13 5 B
-17 3 A
-19 5 A
-24 2 B
+Banda: A 2 B 0
+1 2 B
+2 2 B
+3 2 B
+4 2 B
+5 2 B
+6 2 B
