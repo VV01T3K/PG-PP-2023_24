@@ -56,8 +56,8 @@ int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
-    // GAME->dice[0] = 6;
-    // GAME->dice[1] = 6;
+    // GAME->dice[0] = 1;
+    // GAME->dice[1] = 3;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -182,7 +182,7 @@ int get_dice(GAME_T* GAME, int gracz, int multi, int start) {
     W_GETNSTR_IN(1, 2, CTRLS_PADD)
 
     if (in[0] == 'm' && multi) {
-        mu_move(window, GAME, gracz, start);
+        multi_move(window, GAME, gracz, start);
         return -10;
     }
     int out = atoi(in);
@@ -413,18 +413,27 @@ int move_possible(GAME_T* GAME, int gracz) {
 
 void m_mov_m1(WINDOW* window, GAME_T* GAME, int gracz, int start, int* kostki,
               int* ret_f, int i) {
+    if (GAME->plansza.pole[start].liczba == 0) {
+        w_wprintw(TXT_VER_2);
+        *ret_f = 1;
+    }
+    if (GAME->plansza.pole[start].kolor !=
+        (gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B)) {
+        w_wprintw(TXT_VER_1);
+        *ret_f = 1;
+    }
     if (kostki[i] < 1 || kostki[i] > (GAME->dublet ? 4 : 2)) {
-        w_wprintw("WRONG DICE NUMBERS");
+        w_wprintw(TXT_M_VER_1);
         *ret_f = 1;
     }
     if (GAME->dice[kostki[i] - 1] == 0) {
-        w_wprintw("DICE ALREADY USED");
+        w_wprintw(TXT_M_VER_2);
         *ret_f = 1;
     }
     for (int j = 0; j < 4; j++) {
         if (i == j) continue;
         if (kostki[i] == kostki[j]) {
-            w_wprintw("DICE USED TWICE");
+            w_wprintw(TXT_M_VER_3);
             *ret_f = 1;
             break;
         }
@@ -443,10 +452,13 @@ void m_mov_m2(WINDOW* window, GAME_T* GAME, int gracz, int start, int* kostki,
         save_move(GAME, prev, cel);
     }
     paint_DICE(GAME->ui_2.window, GAME);
-    crud_move_pionek(GAME, start, cel, gracz);
+    if (GAME->plansza.pole[start].kolor ==
+        (gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B)) {
+        crud_move_pionek(GAME, start, cel, gracz);
+    }
 }
 
-void mu_move(WINDOW* win, GAME_T* GAME, int gracz, int st) {
+void multi_move(WINDOW* win, GAME_T* GAME, int gracz, int st) {
     info(win, TXT_M_MOVE, GREEN, gracz);
     WINDOW* window = win;
     W_GETNSTR_IN(7, 2, CTRLS_PADD);
@@ -459,14 +471,14 @@ void mu_move(WINDOW* win, GAME_T* GAME, int gracz, int st) {
     for (i = 0; i < 4; i++) {
         if (!k[i]) continue;
         m_mov_m1(win, GAME, gracz, st, k, &ret_f, i);
-        if (ret_f) return mu_move(win, GAME, gracz, st);
+        if (ret_f) return multi_move(win, GAME, gracz, st);
     }
     for (i = 0, cel = st; i < 4; i++) {
         if (!k[i]) continue;
         cel += gracz_step(k[i] - 1);
         if (verify_move(GAME, st, cel, gracz, MULTI_OFF)) {
             pause();
-            return mu_move(win, GAME, gracz, st);
+            return multi_move(win, GAME, gracz, st);
         }
     }
     m_mov_m2(win, GAME, gracz, st, k, cel);

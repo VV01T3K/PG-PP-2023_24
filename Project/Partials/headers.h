@@ -37,7 +37,7 @@ void paint_NAME(WINDOW* window, GAME_T* GAME);
 
 // index.c
 void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz);
-void mu_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
+void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
 void exec_win(GAME_T* GAME, int points);
 void capture(GAME_T* GAME, int docelowe, int gracz);
 void initGame(GAME_T* GAME);

@@ -62,3 +62,6 @@
 #define TXT_MUST_SKIP "You have to skip!"
 
 #define TXT_M_MOVE "CHOOSE DICES [np.: 2+1+3]"
+#define TXT_M_VER_1 "WRONG DICE NUMBERS"
+#define TXT_M_VER_2 "DICE ALREADY USED"
+#define TXT_M_VER_3 "DICE USED TWICE"
