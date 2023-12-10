@@ -1,6 +1,4 @@
 #include "Partials/headers.h"
-void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz);
-void mu_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
 void clear_save() {
     FILE* file = fopen(SAVE_PATH, "w");
     fclose(file);
@@ -11,7 +9,6 @@ void save_game(GAME_T* GAME) {
             GAME->gracz_A.wynik, GAME->gracz_B.wynik);
     fclose(file);
 }
-void paint_DICE(WINDOW* window, GAME_T* GAME);
 void save_turn(GAME_T* GAME, char* ruchy, char gracz) {
     FILE* file = fopen(SAVE_PATH, "a");
     fprintf(file, "->%d%c %d%s\n", GAME->turn, gracz, GAME->home_news, ruchy);
@@ -22,110 +19,6 @@ void save_move(GAME_T* GAME, int start, int cel) {
     char buffer[20];
     sprintf(buffer, " m %d %d", start, cel);
     strcat(GAME->ruchy, buffer);
-}
-void exec_win(GAME_T* GAME, int points);
-void capture(GAME_T* GAME, int docelowe, int gracz);
-void initGame(GAME_T* GAME);
-void run(GAME_T* GAME);
-void paint_GAMEVIEW(GAME_T* GAME);
-
-void paint_STATE(WINDOW* window, GAME_T* GAME) {
-    wclear(window);
-    box(window, 0, 0);
-    watrr(A_BOLD, w_mvwprintw(0, 1, "State"););
-
-    watrr(A_BOLD, w_mvwprintw(2, 10, "SCORE"););
-    mvwprintw(window, 3, 6, "A: %d  |  B: %d", GAME->gracz_A.wynik,
-              GAME->gracz_B.wynik);
-    wmove(window, 4, 4);
-    for (int i = 0; i < 18; i++) w_wprintw(HR);
-
-    watrr(A_BOLD, w_mvwprintw(5, 7, "TURN:"););
-    mvwprintw(window, 5, 13, "Nr %d", GAME->turn);
-
-    watrr(A_BOLD, w_mvwprintw(6, 5, "MOVES LEFT:"););
-    mvwprintw(window, 6, 18, "%d", GAME->leftMoves);
-
-    wmove(window, 7, 4);
-    for (int i = 0; i < 18; i++) w_wprintw(HR);
-    wrefresh(window);
-    paint_DICE(GAME->ui_2.window, GAME);
-}
-
-void paint_FAME(WINDOW* window, GAME_T* GAME) {
-    wclear(window);
-    box(window, 0, 0);
-    watrr(A_BOLD, w_mvwprintw(1, 7, "Hall of Fame"););
-    FILE* file = fopen(FAME_PATH, "r");
-    char buffer[MAX_NAME];
-    for (int i = 0; i < MAX_FAME; i++) {
-        fscanf(file, "%s %d", buffer, &GAME->fame.gracz[i].wynik);
-        if (buffer[0] == '\0') break;
-        strcpy(GAME->fame.gracz[i].nazwa, buffer);
-        buffer[0] = '\0';
-        mvwprintw(window, i + 3, 2, "%d) %s %d", i + 1,
-                  GAME->fame.gracz[i].nazwa, GAME->fame.gracz[i].wynik);
-    }
-    fclose(file);
-
-    wrefresh(window);
-}
-
-void paint_CONTROLS(WINDOW* window, GAME_T* GAME, int gracz) {
-    wclear(window);
-    box(window, 0, 0);
-    watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Controls"););
-
-    wrefresh(window);
-}
-
-void printDICE(WINDOW* win, int y, int x, GAME_T* GAME, int index) {
-    if (GAME->dice[index] == 0) {
-        mvwprintw(win, y, x, "%d-|#|", index + 1);
-    } else if (GAME->dice[index] != -1) {
-        mvwprintw(win, y, x, "%d-|%d|", index + 1, GAME->dice[index]);
-    }
-}
-
-void paint_DICE(WINDOW* window, GAME_T* GAME) {
-    wclear(window);
-    box(window, 0, 0);
-    watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Dices"););
-
-    if (GAME->dice[0] == -1) {
-        w_mvwprintw(2, 6, TXT_DICE_ROLL);
-        wrefresh(window);
-        return;
-    }
-
-    printDICE(window, 2, 6, GAME, 0);
-    printDICE(window, 2, 16, GAME, 1);
-    printDICE(window, 3, 6, GAME, 2);
-    printDICE(window, 3, 16, GAME, 3);
-
-    if (GAME->dublet) {
-        w_mvwprintw(4, 6, "Dublet!");
-    }
-
-    wrefresh(window);
-}
-
-void paint_MENU(WINDOW* window, GAME_T* GAME) {
-    wclear(window);
-    box(window, 0, 0);
-    watrr(A_BOLD, w_mvwprintw(0, 1, "Menu"););
-
-    watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, TXT_GAME_NAME););
-
-    w_mvwprintw(4, 3, "Choose from list: ");
-    w_mvwprintw(5, 3, "( Enter x2 to confirm :v )");
-
-    w_mvwprintw(8, 4, "1) New Game");
-    w_mvwprintw(9, 4, "2) Load Game");
-    w_mvwprintw(10, 4, "3) Replay");
-    w_mvwprintw(11, 4, "4) Exit");
-
-    wrefresh(window);
 }
 
 int decide_menu(WINDOW* window, GAME_T* GAME) {
@@ -161,10 +54,8 @@ int decide_menu(WINDOW* window, GAME_T* GAME) {
 
 int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
-    GAME->dice[0] = 1;
-    GAME->dice[1] = 2;
-    // GAME->dice[0] = rand() % 6 + 1;
-    // GAME->dice[1] = rand() % 6 + 1;
+    GAME->dice[0] = rand() % 6 + 1;
+    GAME->dice[1] = rand() % 6 + 1;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -180,24 +71,11 @@ int roll(GAME_T* GAME) {
     }
 }
 
-void paint_NAME(WINDOW* window, GAME_T* GAME) {
-    wclear(window);
-    box(window, 0, 0);
-    watrr(A_BOLD, w_mvwprintw(1, 1, TXT_NAME););
-    wrefresh(window);
-}
-
 void get_name(char* name, WINDOW* window, GAME_T* GAME) {
     W_GETNSTR_IN(MAX_NAME, 1, strlen(TXT_NAME) + 2);
     strcpy(name, in);
 }
 
-int asc_fame(const void* a, const void* b) {
-    return ((GRACZ_T*)a)->wynik - ((GRACZ_T*)b)->wynik;
-}
-int desc_fame(const void* a, const void* b) {
-    return ((GRACZ_T*)b)->wynik - ((GRACZ_T*)a)->wynik;
-}
 void save_fame(GAME_T* GAME, char* name, int points) {
     qsort(GAME->fame.gracz, MAX_FAME, sizeof(GRACZ_T), asc_fame);
     if (points > GAME->fame.gracz[0].wynik) {
@@ -391,13 +269,6 @@ int bar_empty(GAME_T* GAME, int gracz) {
         }
     }
     return 0;
-}
-
-int asc_dice(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
-int desc_dice(const void* a, const void* b) { return (*(int*)b - *(int*)a); }
-
-int asc_KOSTKA(const void* a, const void* b) {
-    return (*(KOSTKA_T*)a).value - (*(KOSTKA_T*)b).value;
 }
 
 MOVE_T checkAcap(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
@@ -936,13 +807,6 @@ void gameplay(GAME_T* GAME, int gracz) {
         }
     }
     if (win) exec_win(GAME, win);
-}
-
-void paint_GAMEVIEW(GAME_T* GAME) {
-    paint_STATE(GAME->aside.window, GAME);
-    paint_DICE(GAME->ui_2.window, GAME);
-    paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
-    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 void starting_roll(GAME_T* GAME, WINDOW* window, int gracz) {
     info(window, TXT_START_ROLL, GREEN, gracz);

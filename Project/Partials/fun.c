@@ -1,5 +1,18 @@
 #include "headers.h"
 
+int asc_fame(const void* a, const void* b) {
+    return ((GRACZ_T*)a)->wynik - ((GRACZ_T*)b)->wynik;
+}
+int desc_fame(const void* a, const void* b) {
+    return ((GRACZ_T*)b)->wynik - ((GRACZ_T*)a)->wynik;
+}
+int asc_dice(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
+int desc_dice(const void* a, const void* b) { return (*(int*)b - *(int*)a); }
+
+int asc_KOSTKA(const void* a, const void* b) {
+    return (*(KOSTKA_T*)a).value - (*(KOSTKA_T*)b).value;
+}
+
 void colorInit() {
     init_pair(1, COLOR_BLUE, COLOR_YELLOW);
     init_pair(2, COLOR_RED, COLOR_BLACK);
