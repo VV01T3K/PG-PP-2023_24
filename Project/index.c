@@ -1013,6 +1013,8 @@ int count_lines(FILE* file) {
     while (fscanf(file, "%c", &c) != EOF) {
         if (c == '\n') lines++;
     }
+    lines--;
+    lines < 1 ? lines = 1 : lines;
     rewind(file);
     return lines;
 }
