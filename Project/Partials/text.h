@@ -22,8 +22,8 @@
 #define TXT_DECIDE_S "You can skip now"
 
 #define TXT_START_ROLL "Roll to decide who starts"
-#define TXT_START_PLAYER_A "Player A starts (Press Any key to continue)"
-#define TXT_START_PLAYER_B "Player A starts (Press Any key to continue)"
+#define TXT_START_PLAYER_A "Player A starts [ANY]"
+#define TXT_START_PLAYER_B "Player B starts [ANY]"
 
 #define TXT_TURN "Good luck!"
 
