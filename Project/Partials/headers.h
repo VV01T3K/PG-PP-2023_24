@@ -8,7 +8,7 @@
 
 #include "define.h"
 #include "text.h"
-// fun.c
+// misc.c
 void colorInit();
 char initialInit();
 void initWindows(GAME_T* GAME);
