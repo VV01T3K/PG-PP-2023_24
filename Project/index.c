@@ -625,6 +625,27 @@ void move_to_home(GAME_T* GAME, MOVE_T move, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
 }
 
+int less_optimal_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
+                   int gracz) {
+    MOVE_T optim;
+    int optim_flag = 0;
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        for (int pole = home_start; pole < home_start + 6; pole++) {
+            if (GAME->plansza.pole[pole].kolor != CLR_PLAYER_B) continue;
+            if (pole - kostki[i] < 0) {
+                optim.kostka = kostki[i];
+                optim.pionek = pole;
+                optim_flag = 1;
+                if (GAME->dice[move.kostka - 1] == optim.kostka &&
+                    move.pionek == optim.pionek) {
+                    return 1;
+                }
+            }
+        }
+    }
+}
+
 int is_better_home_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
                      int gracz) {
     MOVE_T optim;
@@ -644,7 +665,30 @@ int is_better_home_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
             }
         }
     }
-    if (!optim_flag && move.pionek + gracz_step(move.kostka - 1) <= 0) return 1;
+    if (!optim_flag && less_optimal_B(GAME, move, kostki, home_start, gracz))
+        return 1;
+    return 0;
+}
+
+int less_optimal_A(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
+                   int gracz) {
+    MOVE_T optim;
+    int optim_flag = 0;
+    for (int i = 0; i < 4; i++) {
+        if (kostki[i] < 1) continue;
+        for (int pole = home_start + 5; pole > home_start - 1; pole--) {
+            if (GAME->plansza.pole[pole].kolor != CLR_PLAYER_A) continue;
+            if (pole + kostki[i] > 25) {
+                optim.kostka = kostki[i];
+                optim.pionek = pole;
+                optim_flag = 1;
+                if (GAME->dice[move.kostka - 1] == optim.kostka &&
+                    move.pionek == optim.pionek) {
+                    return 1;
+                }
+            }
+        }
+    }
     return 0;
 }
 
@@ -667,8 +711,9 @@ int is_better_home_A(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
             }
         }
     }
-    if (!optim_flag && move.pionek + gracz_step(move.kostka - 1) >= 25)
+    if (!optim_flag && less_optimal_A(GAME, move, kostki, home_start, gracz))
         return 1;
+
     return 0;
 }
 
@@ -1080,8 +1125,8 @@ void run(GAME_T* GAME) {
             clear_save();
             initGame(GAME);
             paint_GAMEVIEW(GAME);
-            // gracz = PLAYER_A;
-            gracz = PLAYER_B;
+            gracz = PLAYER_A;
+            // gracz = PLAYER_B;
             // gracz = who_starts(GAME);
             initGame(GAME);
             save_game(GAME);
