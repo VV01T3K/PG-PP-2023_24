@@ -23,7 +23,7 @@ void save_move(GAME_T* GAME, int start, int cel) {
     sprintf(buffer, " m %d %d", start, cel);
     strcat(GAME->ruchy, buffer);
 }
-void exec_win(GAME_T* GAME, int points, int gracz);
+void exec_win(GAME_T* GAME, int points);
 void capture(GAME_T* GAME, int docelowe, int gracz);
 void initGame(GAME_T* GAME);
 void run(GAME_T* GAME);
@@ -817,7 +817,7 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
 
     int cel = move.pionek + gracz_step(move.kostka - 1);
     if (home_flag && (cel > 24 || cel < 1))
-        cel = gracz == PLAYER_A ? 25 : 0;
+        cel = TRASH_FIELD;
     else if (cel > 24 || cel < 1) {
         comms(window, TXT_VERIFY_4, ORANGE, gracz);
         pause();
@@ -835,7 +835,7 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
             pause();
             return move_action(window, GAME, gracz);
         }
-        if (cel == 25 || cel == 0) {
+        if (cel == TRASH_FIELD) {
             move_to_home(GAME, move, gracz);
             return;
         }
@@ -863,12 +863,14 @@ int check_win(GAME_T* GAME) {
             points = 2;
             if (BAR_PLAYER_B.liczba > 0) points = 3;
         }
+        GAME->winner = PLAYER_A;
         return points;
     } else if (GAME->plansza.dwor.gracz_B == 15) {
         if (GAME->plansza.dwor.gracz_A == 0) {
             points = 2;
             if (BAR_PLAYER_A.liczba > 0) points = 3;
         }
+        GAME->winner = PLAYER_B;
         return points;
     }
     return 0;
@@ -914,6 +916,7 @@ void gameplay(GAME_T* GAME, int gracz) {
             save_turn(GAME, GAME->ruchy, 'B');
             if (win) break;
         } else {
+            gracz = PLAYER_B;
             win = turn(GAME->controls.window, GAME, PLAYER_B);
             save_turn(GAME, GAME->ruchy, 'B');
             if (win) break;
@@ -922,7 +925,7 @@ void gameplay(GAME_T* GAME, int gracz) {
             if (win) break;
         }
     }
-    if (win) exec_win(GAME, win, gracz);
+    if (win) exec_win(GAME, win);
 }
 
 void paint_GAMEVIEW(GAME_T* GAME) {
@@ -1011,7 +1014,8 @@ int load_save(GAME_T* GAME, FILE* file, int recur, int limit) {
     }
     return gracz == PLAYER_A ? PLAYER_B : PLAYER_A;
 }
-void exec_win(GAME_T* GAME, int points, int gracz) {
+void exec_win(GAME_T* GAME, int points) {
+    int gracz = GAME->winner;
     GAME->gracz_A.wynik += gracz == PLAYER_A ? points : 0;
     GAME->gracz_B.wynik += gracz == PLAYER_B ? points : 0;
     paint_STATE(GAME->aside.window, GAME);

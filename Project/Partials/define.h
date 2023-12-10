@@ -160,6 +160,7 @@ typedef struct {
     int home_news;
     int turn;
     int ended;
+    int winner;
 } GAME_T;
 
 typedef struct {
