@@ -60,3 +60,5 @@
 
 #define TXT_MUST_MOVE "You have to move!"
 #define TXT_MUST_SKIP "You have to skip!"
+
+#define TXT_M_MOVE "CHOOSE DICES [np.: 2+1+3]"

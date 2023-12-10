@@ -1,6 +1,6 @@
 #include "Partials/headers.h"
 void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz);
-void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
+void mu_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
 void clear_save() {
     FILE* file = fopen(SAVE_PATH, "w");
     fclose(file);
@@ -228,7 +228,7 @@ void conclude(GAME_T* GAME) {
 int decide_ctrls(WINDOW* window, GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) / 2, 4, TXT_CONTROLS);
     clearLine(getmaxy(window) / 2);
-    W_GETNSTR_IN(1, 2, CONTROLS_PADD);
+    W_GETNSTR_IN(1, 2, CTRLS_PADD);
     switch (tolower(in[0])) {
         case 'r':
             w_wprintw("Roll");
@@ -274,8 +274,7 @@ void info(WINDOW* window, char* str, int kolor, int gracz) {
 }
 
 int get_number(WINDOW* window, GAME_T* GAME, int gracz) {
-    W_GETNSTR_IN((gracz == -1 ? 20 : 2), 2,
-                 CONTROLS_PADD + (gracz == -1 ? 0 : 1))
+    W_GETNSTR_IN((gracz == -1 ? 20 : 2), 2, CTRLS_PADD + (gracz == -1 ? 0 : 1))
     int result = atoi(in);
     if (gracz == -1) {
         if (!result && in[0] != '0') {
@@ -290,7 +289,7 @@ int get_number(WINDOW* window, GAME_T* GAME, int gracz) {
     }
     wprintw(window, "Pole Nr %d", result);
     clearLine(2);
-    wmove(window, 2, CONTROLS_PADD);
+    wmove(window, 2, CTRLS_PADD);
     wrefresh(window);
     char ch = wgetch(window);
     if (ch != '\n') return get_number(window, GAME, gracz);
@@ -300,10 +299,10 @@ int get_number(WINDOW* window, GAME_T* GAME, int gracz) {
 
 int get_dice(GAME_T* GAME, int gracz, int multi, int start) {
     WINDOW* window = GAME->controls.window;
-    W_GETNSTR_IN(1, 2, CONTROLS_PADD)
+    W_GETNSTR_IN(1, 2, CTRLS_PADD)
 
     if (in[0] == 'm' && multi) {
-        multi_move(window, GAME, gracz, start);
+        mu_move(window, GAME, gracz, start);
         return -10;
     }
     int out = atoi(in);
@@ -539,49 +538,29 @@ int move_possible(GAME_T* GAME, int gracz) {
         return check_B_moves(GAME, kolor, kostki);
 }
 
-void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start) {
-    info(window, "CHOOSE DICES [np.: 2+1+3]", GREEN, gracz);
-    W_GETNSTR_IN(7, 2, CONTROLS_PADD);
-    int kostki[4] = {0};
-    char* split = strtok(in, "+");
-    int j, i = 0, return_flag = 0;
-
-    while (split != NULL) {
-        kostki[i++] = atoi(split);
-        split = strtok(NULL, "+");
+void m_mov_m1(WINDOW* window, GAME_T* GAME, int gracz, int start, int* kostki,
+              int* ret_f, int i) {
+    if (kostki[i] < 1 || kostki[i] > (GAME->dublet ? 4 : 2)) {
+        w_wprintw("WRONG DICE NUMBERS");
+        *ret_f = 1;
     }
-
-    for (i = 0; i < 4; i++) {
-        if (!kostki[i]) continue;
-
-        if (kostki[i] < 1 || kostki[i] > (GAME->dublet ? 4 : 2)) {
-            w_wprintw("WRONG DICE NUMBERS");
-            return_flag = 1;
-        }
-        if (GAME->dice[kostki[i] - 1] == 0) {
-            w_wprintw("DICE ALREADY USED");
-            return_flag = 1;
-        }
-        for (j = 0; j < 4; j++) {
-            if (i == j) continue;
-            if (kostki[i] == kostki[j]) {
-                w_wprintw("DICE USED TWICE");
-                return_flag = 1;
-                break;
-            }
-        }
-        if (return_flag) return multi_move(window, GAME, gracz, start);
+    if (GAME->dice[kostki[i] - 1] == 0) {
+        w_wprintw("DICE ALREADY USED");
+        *ret_f = 1;
     }
-    int cel;
-    for (i = 0, cel = start; i < 4; i++) {
-        if (!kostki[i]) continue;
-        cel += gracz_step(kostki[i] - 1);
-        if (verify_move(GAME, start, cel, gracz, MULTI_OFF)) {
-            pause();
-            return multi_move(window, GAME, gracz, start);
+    for (int j = 0; j < 4; j++) {
+        if (i == j) continue;
+        if (kostki[i] == kostki[j]) {
+            w_wprintw("DICE USED TWICE");
+            *ret_f = 1;
+            break;
         }
     }
-    for (i = 0, cel = start; i < 4; i++) {
+}
+
+void m_mov_m2(WINDOW* window, GAME_T* GAME, int gracz, int start, int* kostki,
+              int cel) {
+    for (int i = 0, cel = start; i < 4; i++) {
         if (!kostki[i]) continue;
         int prev = cel;
         cel += gracz_step(kostki[i] - 1);
@@ -592,6 +571,32 @@ void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start) {
     }
     paint_DICE(GAME->ui_2.window, GAME);
     crud_move_pionek(GAME, start, cel, gracz);
+}
+
+void mu_move(WINDOW* win, GAME_T* GAME, int gracz, int st) {
+    info(win, TXT_M_MOVE, GREEN, gracz);
+    WINDOW* window = win;
+    W_GETNSTR_IN(7, 2, CTRLS_PADD);
+    int i = 0, ret_f = 0, cel, k[4] = {0};
+    char* split = strtok(in, "+");
+    while (split != NULL) {
+        k[i++] = atoi(split);
+        split = strtok(NULL, "+");
+    }
+    for (i = 0; i < 4; i++) {
+        if (!k[i]) continue;
+        m_mov_m1(win, GAME, gracz, st, k, &ret_f, i);
+        if (ret_f) return mu_move(win, GAME, gracz, st);
+    }
+    for (i = 0, cel = st; i < 4; i++) {
+        if (!k[i]) continue;
+        cel += gracz_step(k[i] - 1);
+        if (verify_move(GAME, st, cel, gracz, MULTI_OFF)) {
+            pause();
+            return mu_move(win, GAME, gracz, st);
+        }
+    }
+    m_mov_m2(win, GAME, gracz, st, k, cel);
 }
 
 int can_take_home(GAME_T* GAME, int gracz) {
@@ -1046,7 +1051,7 @@ void exec_win(GAME_T* GAME, int points) {
 int decide_replay(WINDOW* window, GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) / 2, 4, TXT_REPLAY);
     clearLine(getmaxy(window) / 2);
-    W_GETNSTR_IN(1, 2, CONTROLS_PADD + 1);
+    W_GETNSTR_IN(1, 2, CTRLS_PADD + 1);
     int result;
     switch (tolower(in[0])) {
         case 'n':

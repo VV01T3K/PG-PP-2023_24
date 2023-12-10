@@ -32,7 +32,7 @@
 #define PADDED_BOARD_WIDTH (BOARD_WIDTH + (BOARD_PADDING * 3))
 #define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
 
-#define CONTROLS_PADD 15 + 2  // strlen("Ruch-Gracza X: ") + x
+#define CTRLS_PADD 15 + 2  // strlen("Ruch-Gracza X: ") + x
 #define MENU_PADD 18 + 3      // strlen("Choose from list: ") + x
 
 #define BOARD_HEIGHT 13
