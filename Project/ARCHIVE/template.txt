@@ -1,5 +1,5 @@
 Dwór: A 13 B 0
 Banda: A 0 B 0
 
-18 1 A
+19 1 A
 24 1 A

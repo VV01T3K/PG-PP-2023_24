@@ -644,6 +644,8 @@ int less_optimal_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
             }
         }
     }
+    if (!optim_flag) return 1;
+    return 0;
 }
 
 int is_better_home_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
@@ -689,6 +691,7 @@ int less_optimal_A(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
             }
         }
     }
+    if (!optim_flag) return 1;
     return 0;
 }
 
