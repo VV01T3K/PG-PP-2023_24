@@ -400,20 +400,37 @@ int asc_KOSTKA(const void* a, const void* b) {
     return (*(KOSTKA_T*)a).value - (*(KOSTKA_T*)b).value;
 }
 
-MOVE_T check_A_capture(GAME_T* GAME, int kolor, int kostki[4]) {
+MOVE_T check_A_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
     MOVE_T move;
-    KOSTKA_T copy[4];
-    for (int i = 0; i < 4; i++) {
-        copy[i].value = kostki[i];
-        copy[i].index = i;
-    }
-    qsort(copy, 4, sizeof(KOSTKA_T), asc_KOSTKA);
     for (int i = 0; i < 4; i++) {
         if (copy[i].value < 1) continue;
         for (int j = 0; j < POLE_COUNT + 1; j++) {
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
-                int docelowe = j + copy[i].value;
+                int cel = j + copy[i].value;
+                if (cel < 1 || cel > 24) continue;
+                if (GAME->plansza.pole[cel].kolor != kolor &&
+                    GAME->plansza.pole[cel].liczba == 1) {
+                    move.kostka = copy[i].index + 1;
+                    move.pionek = j;
+                    return move;
+                }
+            }
+        }
+    }
+    move.kostka = -1;
+    move.pionek = -1;
+    return move;
+}
+
+MOVE_T check_B_capture(GAME_T* GAME, int kolor, KOSTKA_T copy[4]) {
+    MOVE_T move;
+    for (int i = 0; i < 4; i++) {
+        if (copy[i].value < 1) continue;
+        for (int j = POLE_COUNT; j > 0; j--) {
+            if (GAME->plansza.pole[j].kolor == kolor &&
+                GAME->plansza.pole[j].liczba > 0) {
+                int docelowe = j - copy[i].value;
                 if (docelowe < 1 || docelowe > 24) continue;
                 if (GAME->plansza.pole[docelowe].kolor != kolor &&
                     GAME->plansza.pole[docelowe].liczba == 1) {
@@ -429,35 +446,15 @@ MOVE_T check_A_capture(GAME_T* GAME, int kolor, int kostki[4]) {
     return move;
 }
 
-MOVE_T check_B_capture(GAME_T* GAME, int kolor, int kostki[4]) {
-    MOVE_T move;
-    // qsort(kostki, 4, sizeof(int), asc_dice);
-    for (int i = 0; i < 4; i++) {
-        if (kostki[i] < 1) continue;
-        for (int j = POLE_COUNT; j > 0; j--) {
-            if (GAME->plansza.pole[j].kolor == kolor &&
-                GAME->plansza.pole[j].liczba > 0) {
-                int docelowe = j - kostki[i];
-                if (docelowe < 1 || docelowe > 24) continue;
-                if (GAME->plansza.pole[docelowe].kolor != kolor &&
-                    GAME->plansza.pole[docelowe].liczba == 1) {
-                    move.kostka = i + 1;
-                    move.pionek = j;
-                    return move;
-                }
-            }
-        }
-    }
-    move.kostka = -1;
-    move.pionek = -1;
-    return move;
-}
-
 int capture_possible(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
 
-    int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
-                     GAME->dice[3]};
+    KOSTKA_T kostki[4];
+    for (int i = 0; i < 4; i++) {
+        kostki[i].value = GAME->dice[i];
+        kostki[i].index = i;
+    }
+    qsort(kostki, 4, sizeof(KOSTKA_T), asc_KOSTKA);
 
     if (gracz == PLAYER_A) {
         if (check_A_capture(GAME, kolor, kostki).kostka != -1) {
@@ -719,9 +716,14 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
 
     // capture
     if (capture_possible(GAME, gracz)) {
-        move = gracz == PLAYER_A
-                   ? check_A_capture(GAME, CLR_PLAYER_A, GAME->dice)
-                   : check_B_capture(GAME, CLR_PLAYER_B, GAME->dice);
+        qsort(kostki, 4, sizeof(KOSTKA_T), asc_KOSTKA);
+        KOSTKA_T kostki[4];
+        for (int i = 0; i < 4; i++) {
+            kostki[i].value = GAME->dice[i];
+            kostki[i].index = i;
+        }
+        move = gracz == PLAYER_A ? check_A_capture(GAME, CLR_PLAYER_A, kostki)
+                                 : check_B_capture(GAME, CLR_PLAYER_B, kostki);
         if (bar_flag && move.pionek == forced.pionek) {
             forced.kostka = move.kostka;
             capture_flag = 1;
@@ -930,12 +932,6 @@ int load_save(GAME_T* GAME, FILE* file, int recur, int limit) {
     refresh();
     int gracz = 0, home;
     while (fscanf(file, "%c", &c) != EOF && (lines < limit - 1 || limit < 0)) {
-        // nadpisanie tekstu
-        // if (c == 't') {
-        //     fseek(file, -1, SEEK_CUR);
-        //     fprintf(file, "Your text here1\n");
-        //     fprintf(file, "Your text here2\n");
-        // }
         if (c == '\n') {
             lines++;
             fscanf(file, "->%d%c %d", &GAME->turn, &c, &home);
@@ -1157,11 +1153,6 @@ void initGame(GAME_T* GAME) {
     GAME->dice[3] = -1;
 
     strcpy(GAME->komunikat, TXT_TURN);
-
-    // for (i = 0; i < MAX_HALL_OF_FAME; i++) {
-    //     GAME->hall_of_fame.gracz[i].wynik = 0;
-    //     strcpy(GAME->hall_of_fame.gracz[i].nazwa, "Gracz");
-    // }
 }
 
 int main() {
