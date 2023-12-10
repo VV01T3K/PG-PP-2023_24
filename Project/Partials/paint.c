@@ -53,7 +53,10 @@ void paint_POLE_TOP(int x, int pad, int kolor, WINDOW* window, POLE_T pole) {
             atrrCLR(kolor, mvwprintw(window, y + i, x, "%s", POLE_DOWN));
         }
     }
-    if (tmp > 0) mvwprintw(window, y + i, x - 1, "+%d", tmp);
+    if (tmp > 0)
+        mvwprintw(window, y + i, x - 1, "+%d", tmp);
+    else
+        mvwprintw(window, y + i, x - 1, "  ");
 }
 void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window, POLE_T pole) {
     int i, y = 8 + pad, tmp = pole.liczba;
@@ -66,7 +69,10 @@ void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window, POLE_T pole) {
             atrrCLR(kolor, mvwprintw(window, y + i, x, "%s", POLE_UP));
         }
     }
-    if (tmp > 0) mvwprintw(window, y - 1, x - 1, "+%d", tmp);
+    if (tmp > 0)
+        mvwprintw(window, y - 1, x - 1, "+%d", tmp);
+    else
+        mvwprintw(window, y - 1, x - 1, "  ");
 }
 void paint_BAR_A(int x, int y, WINDOW* window, GAME_T* GAME) {
     int i, tmp_A = BAR_PLAYER_A.liczba;

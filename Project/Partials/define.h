@@ -161,6 +161,7 @@ typedef struct {
     int turn;
     int ended;
     int winner;
+    int bar_f;
 } GAME_T;
 
 typedef struct {

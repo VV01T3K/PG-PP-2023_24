@@ -57,7 +57,7 @@ int roll(GAME_T* GAME) {
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
     // GAME->dice[0] = 1;
-    // GAME->dice[1] = 3;
+    // GAME->dice[1] = 1;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -366,6 +366,7 @@ int check_A_moves(GAME_T* GAME, int kolor, int kostki[4]) {
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
         for (int j = 0; j < POLE_COUNT + 1; j++) {
+            if (GAME->bar_f && j != 0) continue;
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
                 int docelowe = j + kostki[i];
@@ -385,6 +386,7 @@ int check_B_moves(GAME_T* GAME, int kolor, int kostki[4]) {
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
         for (int j = POLE_COUNT + 1; j > 0; j--) {
+            if (GAME->bar_f && j != 25) continue;
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
                 int docelowe = j - kostki[i];
@@ -404,7 +406,7 @@ int move_possible(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
                      GAME->dice[3]};
-
+    GAME->bar_f = !bar_empty(GAME, gracz);
     if (gracz == PLAYER_A)
         return check_A_moves(GAME, kolor, kostki);
     else
