@@ -41,6 +41,7 @@
 #define FAME_PATH "ARCHIVE/fame.txt"
 #define SAVE_PATH "ARCHIVE/save.txt"
 #define TEMPLATE_PATH "ARCHIVE/template.txt"
+#define TEMP_PATH "ARCHIVE/temp.txt"
 
 // Znaki
 // #define BLOCK "\u25A7"

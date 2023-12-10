@@ -964,6 +964,22 @@ int decide_replay(WINDOW* window, GAME_T* GAME) {
     return result;
 }
 
+void overwrite_save(int curr) {
+    FILE* file = fopen(SAVE_PATH, "r+");
+    FILE* file2 = fopen(TEMP_PATH, "w+");
+    char c;
+    int lines = 1;
+    while (fscanf(file, "%c", &c) != EOF) {
+        if (c == '\n') lines++;
+        if (lines == curr) break;
+        fprintf(file2, "%c", c);
+    }
+    fclose(file);
+    fclose(file2);
+    remove(SAVE_PATH);
+    rename(TEMP_PATH, SAVE_PATH);
+}
+
 int replay_interact(WINDOW* window, GAME_T* GAME, int curr, int limit,
                     int gracz) {
     char buffer[50];
@@ -986,6 +1002,7 @@ int replay_interact(WINDOW* window, GAME_T* GAME, int curr, int limit,
             w_mvwprintw(2, getmaxx(window) - 1, "│");
             break;
         case 4:
+            overwrite_save(curr);
             gameplay(GAME, gracz);
             return curr;
 
