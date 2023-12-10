@@ -56,6 +56,8 @@ int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
+    GAME->dice[0] = 6;
+    GAME->dice[1] = 6;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];
@@ -505,24 +507,21 @@ void move_to_home(GAME_T* GAME, MOVE_T move, int gracz) {
 int less_optimal_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
                    int gracz) {
     MOVE_T optim;
-    int optim_flag = 0;
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
-        for (int pole = home_start; pole < home_start + 6; pole++) {
+        for (int pole = home_start + 5; pole > home_start - 1; pole--) {
             if (GAME->plansza.pole[pole].kolor != CLR_PLAYER_B) continue;
             if (pole - kostki[i] < 0) {
                 optim.kostka = kostki[i];
                 optim.pionek = pole;
-                optim_flag = 1;
                 if (GAME->dice[move.kostka - 1] == optim.kostka &&
                     move.pionek == optim.pionek) {
                     return 1;
-                }
+                } else
+                    return 0;
             }
         }
     }
-    if (!optim_flag) return 1;
-    return 0;
 }
 
 int is_better_home_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
@@ -552,24 +551,21 @@ int is_better_home_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
 int less_optimal_A(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
                    int gracz) {
     MOVE_T optim;
-    int optim_flag = 0;
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
-        for (int pole = home_start + 5; pole > home_start - 1; pole--) {
+        for (int pole = home_start; pole < home_start + 6; pole++) {
             if (GAME->plansza.pole[pole].kolor != CLR_PLAYER_A) continue;
             if (pole + kostki[i] > 25) {
                 optim.kostka = kostki[i];
                 optim.pionek = pole;
-                optim_flag = 1;
                 if (GAME->dice[move.kostka - 1] == optim.kostka &&
                     move.pionek == optim.pionek) {
                     return 1;
-                }
+                } else
+                    return 0;
             }
         }
     }
-    if (!optim_flag) return 1;
-    return 0;
 }
 
 int is_better_home_A(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
