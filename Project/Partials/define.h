@@ -19,8 +19,8 @@
 #define BAR_PLAYER_A GAME->plansza.pole[0]
 #define BAR_PLAYER_B GAME->plansza.pole[25]
 
-#define CLR_PLAYER_A MAGENTA
-#define CLR_PLAYER_B CYAN
+#define CLR_PLAYER_A CYAN
+#define CLR_PLAYER_B MAGENTA
 
 #define STARTED 0
 #define PLAYING 1
@@ -33,7 +33,7 @@
 #define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
 
 #define CTRLS_PADD 15 + 2  // strlen("Ruch-Gracza X: ") + x
-#define MENU_PADD 18 + 3      // strlen("Choose from list: ") + x
+#define MENU_PADD 18 + 3   // strlen("Choose from list: ") + x
 
 #define BOARD_HEIGHT 13
 
