@@ -110,6 +110,11 @@
 #define gracz_step(index) \
     (gracz == PLAYER_A ? GAME->dice[index] : -GAME->dice[index])
 
+#define LOG(str, ...)                   \
+    FILE* file = fopen("log.txt", "a"); \
+    fprintf(file, str, ##__VA_ARGS__);  \
+    fclose(file);
+
 // Struktury
 typedef struct {
     int liczba;  // 0 - brak, 1-15 - ilość pionków

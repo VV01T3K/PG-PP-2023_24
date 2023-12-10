@@ -698,9 +698,8 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
     }
     // bar
     if (!bar_empty(GAME, gracz)) {
-        forced.pionek = gracz == PLAYER_A ? 0 : 25;
-        move.pionek = forced.pionek;
         bar_flag = 1;
+        forced.pionek = gracz == PLAYER_A ? 0 : 25;
         comms(window, TXT_BAR_FULL, RED, gracz);
         pause();
     }
@@ -716,24 +715,30 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
 
     // capture
     if (capture_possible(GAME, gracz)) {
-        qsort(kostki, 4, sizeof(KOSTKA_T), asc_KOSTKA);
         KOSTKA_T kostki[4];
         for (int i = 0; i < 4; i++) {
             kostki[i].value = GAME->dice[i];
             kostki[i].index = i;
         }
+        qsort(kostki, 4, sizeof(KOSTKA_T), asc_KOSTKA);
+
         move = gracz == PLAYER_A ? check_A_capture(GAME, CLR_PLAYER_A, kostki)
                                  : check_B_capture(GAME, CLR_PLAYER_B, kostki);
-        if (bar_flag && move.pionek == forced.pionek) {
-            forced.kostka = move.kostka;
-            capture_flag = 1;
-        } else if (!bar_flag) {
+
+        if (bar_flag) {
+            if (move.pionek == forced.pionek) {
+                forced.kostka = move.kostka;
+                capture_flag = 1;
+                comms(window, TXT_CAP_POS, RED, gracz);
+                pause();
+            }
+        } else {
             forced.kostka = move.kostka;
             forced.pionek = move.pionek;
             capture_flag = 1;
+            comms(window, TXT_CAP_POS, RED, gracz);
+            pause();
         }
-        comms(window, TXT_CAP_POS, RED, gracz);
-        pause();
     }
     // end capture
 
@@ -796,10 +801,10 @@ void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
         sprintf(kostki, TXT_POST_MOVE, move.pionek,
                 move.pionek + gracz_step(move.kostka - 1));
     }
-
     comms(window, kostki, GREEN, gracz);
     // end komunikat o ruchu
     move_pionek(GAME, move, gracz);
+    pause();
 }
 int check_win(GAME_T* GAME) {
     int points = 1;
@@ -1111,9 +1116,8 @@ void placePionki(GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
     } pionki[] = {
-        {1, 1, CLR_PLAYER_A},
-        {2, 1, CLR_PLAYER_B},
-        {5, 1, CLR_PLAYER_B},
+        {1, 1, CLR_PLAYER_B}, {2, 1, CLR_PLAYER_A}, {3, 1, CLR_PLAYER_B},
+        {4, 1, CLR_PLAYER_B}, {5, 1, CLR_PLAYER_B}, {6, 1, CLR_PLAYER_B},
     };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
@@ -1127,12 +1131,12 @@ void RESET_GAME(GAME_T* GAME) {
     GAME->turn = 0;
     GAME->home_news = 0;
 
-    BAR_PLAYER_A.liczba = 0;
-    BAR_PLAYER_B.liczba = 0;
+    BAR_PLAYER_A.liczba = 2;
+    BAR_PLAYER_B.liczba = 1;
     BAR_PLAYER_A.kolor = CLR_PLAYER_A;
     BAR_PLAYER_B.kolor = CLR_PLAYER_B;
 
-    GAME->plansza.dwor.gracz_A = 14;
+    GAME->plansza.dwor.gracz_A = 0;
     GAME->plansza.dwor.gracz_B = 0;
 
     GAME->dice[0] = -1;
