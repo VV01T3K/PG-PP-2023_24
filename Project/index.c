@@ -1,35 +1,35 @@
 #include "Partials/headers.h"
-void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz);
-void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start);
+void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz);
+void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
 void clear_save() {
     FILE* file = fopen(SAVE_PATH, "w");
     fclose(file);
 }
-void save_game(struct GAME_T* GAME) {
+void save_game(GAME_T* GAME) {
     FILE* file = fopen(SAVE_PATH, "a");
     fprintf(file, "SEED: %d | SCORE: A%d B%d\n", GAME->rand_seed,
             GAME->gracz_A.wynik, GAME->gracz_B.wynik);
     fclose(file);
 }
-void paint_DICE(WINDOW* window, struct GAME_T* GAME);
-void save_turn(struct GAME_T* GAME, char* ruchy, char gracz) {
+void paint_DICE(WINDOW* window, GAME_T* GAME);
+void save_turn(GAME_T* GAME, char* ruchy, char gracz) {
     FILE* file = fopen(SAVE_PATH, "a");
     fprintf(file, "->%d%c %d%s\n", GAME->turn, gracz, GAME->home_news, ruchy);
     ruchy[0] = '\0';
     fclose(file);
 }
-void save_move(struct GAME_T* GAME, int start, int cel) {
+void save_move(GAME_T* GAME, int start, int cel) {
     char buffer[20];
     sprintf(buffer, " m %d %d", start, cel);
     strcat(GAME->ruchy, buffer);
 }
-void exec_win(struct GAME_T* GAME, int points, int gracz);
-void capture(struct GAME_T* GAME, int docelowe, int gracz);
-void initGame(struct GAME_T* GAME);
-void run(struct GAME_T* GAME);
-void paint_GAMEVIEW(struct GAME_T* GAME);
+void exec_win(GAME_T* GAME, int points, int gracz);
+void capture(GAME_T* GAME, int docelowe, int gracz);
+void initGame(GAME_T* GAME);
+void run(GAME_T* GAME);
+void paint_GAMEVIEW(GAME_T* GAME);
 
-void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
+void paint_STATE(WINDOW* window, GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(0, 1, "State"););
@@ -52,7 +52,7 @@ void paint_STATE(WINDOW* window, struct GAME_T* GAME) {
     paint_DICE(GAME->ui_2.window, GAME);
 }
 
-void paint_FAME(WINDOW* window, struct GAME_T* GAME) {
+void paint_FAME(WINDOW* window, GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(1, 7, "Hall of Fame"););
@@ -71,7 +71,7 @@ void paint_FAME(WINDOW* window, struct GAME_T* GAME) {
     wrefresh(window);
 }
 
-void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME, int gracz) {
+void paint_CONTROLS(WINDOW* window, GAME_T* GAME, int gracz) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Controls"););
@@ -79,7 +79,7 @@ void paint_CONTROLS(WINDOW* window, struct GAME_T* GAME, int gracz) {
     wrefresh(window);
 }
 
-void printDICE(WINDOW* win, int y, int x, struct GAME_T* GAME, int index) {
+void printDICE(WINDOW* win, int y, int x, GAME_T* GAME, int index) {
     if (GAME->dice[index] == 0) {
         mvwprintw(win, y, x, "%d-|#|", index + 1);
     } else if (GAME->dice[index] != -1) {
@@ -87,7 +87,7 @@ void printDICE(WINDOW* win, int y, int x, struct GAME_T* GAME, int index) {
     }
 }
 
-void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
+void paint_DICE(WINDOW* window, GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Dices"););
@@ -110,7 +110,7 @@ void paint_DICE(WINDOW* window, struct GAME_T* GAME) {
     wrefresh(window);
 }
 
-void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
+void paint_MENU(WINDOW* window, GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(0, 1, "Menu"););
@@ -128,7 +128,7 @@ void paint_MENU(WINDOW* window, struct GAME_T* GAME) {
     wrefresh(window);
 }
 
-int decide_menu(WINDOW* window, struct GAME_T* GAME) {
+int decide_menu(WINDOW* window, GAME_T* GAME) {
     W_GETNSTR_IN(1, 4, MENU_PADD);
     int result = atoi(in);
     switch (result) {
@@ -159,7 +159,7 @@ int decide_menu(WINDOW* window, struct GAME_T* GAME) {
     return result;
 }
 
-int roll(struct GAME_T* GAME) {
+int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
     GAME->dice[0] = 4;
     GAME->dice[1] = 1;
@@ -180,31 +180,31 @@ int roll(struct GAME_T* GAME) {
     }
 }
 
-void paint_NAME(WINDOW* window, struct GAME_T* GAME) {
+void paint_NAME(WINDOW* window, GAME_T* GAME) {
     wclear(window);
     box(window, 0, 0);
     watrr(A_BOLD, w_mvwprintw(1, 1, TXT_NAME););
     wrefresh(window);
 }
 
-void get_name(char* name, WINDOW* window, struct GAME_T* GAME) {
+void get_name(char* name, WINDOW* window, GAME_T* GAME) {
     W_GETNSTR_IN(MAX_NAME, 1, strlen(TXT_NAME) + 2);
     strcpy(name, in);
 }
 
 int asc_fame(const void* a, const void* b) {
-    return ((struct GRACZ_T*)a)->wynik - ((struct GRACZ_T*)b)->wynik;
+    return ((GRACZ_T*)a)->wynik - ((GRACZ_T*)b)->wynik;
 }
 int desc_fame(const void* a, const void* b) {
-    return ((struct GRACZ_T*)b)->wynik - ((struct GRACZ_T*)a)->wynik;
+    return ((GRACZ_T*)b)->wynik - ((GRACZ_T*)a)->wynik;
 }
-void save_fame(struct GAME_T* GAME, char* name, int points) {
-    qsort(GAME->fame.gracz, MAX_FAME, sizeof(struct GRACZ_T), asc_fame);
+void save_fame(GAME_T* GAME, char* name, int points) {
+    qsort(GAME->fame.gracz, MAX_FAME, sizeof(GRACZ_T), asc_fame);
     if (points > GAME->fame.gracz[0].wynik) {
         strcpy(GAME->fame.gracz[0].nazwa, name);
         GAME->fame.gracz[0].wynik = points;
     }
-    qsort(GAME->fame.gracz, MAX_FAME, sizeof(struct GRACZ_T), desc_fame);
+    qsort(GAME->fame.gracz, MAX_FAME, sizeof(GRACZ_T), desc_fame);
     FILE* file = fopen(FAME_PATH, "w");
     for (int i = 0; i < MAX_FAME; i++) {
         if (GAME->fame.gracz[i].nazwa[0] == '\0') break;
@@ -214,7 +214,7 @@ void save_fame(struct GAME_T* GAME, char* name, int points) {
     fclose(file);
 }
 
-void conclude(struct GAME_T* GAME) {
+void conclude(GAME_T* GAME) {
     save_game(GAME);
     paint_NAME(GAME->menu.window, GAME);
     char name[MAX_NAME];
@@ -225,7 +225,7 @@ void conclude(struct GAME_T* GAME) {
     save_fame(GAME, name, points);
 }
 
-int decide_controls(WINDOW* window, struct GAME_T* GAME) {
+int decide_controls(WINDOW* window, GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) / 2, 4, TXT_CONTROLS);
     clearLine(getmaxy(window) / 2);
     W_GETNSTR_IN(1, 2, CONTROLS_PADD);
@@ -273,7 +273,7 @@ void comms(WINDOW* window, char* str, int kolor, int gracz) {
     wrefresh(window);
 }
 
-int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
+int get_number(WINDOW* window, GAME_T* GAME, int gracz) {
     W_GETNSTR_IN((gracz == -1 ? 20 : 2), 2,
                  CONTROLS_PADD + (gracz == -1 ? 0 : 1))
     int result = atoi(in);
@@ -298,8 +298,7 @@ int get_number(WINDOW* window, struct GAME_T* GAME, int gracz) {
     return result;
 }
 
-int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz, int multi,
-             int start) {
+int get_dice(WINDOW* window, GAME_T* GAME, int gracz, int multi, int start) {
     W_GETNSTR_IN(1, 2, CONTROLS_PADD)
     if (in[0] == 'm' && multi == MULTI_ON) {
         multi_move(window, GAME, gracz, start);
@@ -323,7 +322,7 @@ int get_dice(WINDOW* window, struct GAME_T* GAME, int gracz, int multi,
     clearLine(2);
     return result;
 }
-void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+void move_pionek(GAME_T* GAME, MOVE_T move, int gracz) {
     int pionek = move.pionek, kostka = move.kostka;
     int cel = pionek + gracz_step(kostka - 1);
     if (gracz == PLAYER_A) {
@@ -344,7 +343,7 @@ void move_pionek(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     save_move(GAME, pionek, cel);
 }
 
-void capture(struct GAME_T* GAME, int docelowe, int gracz) {
+void capture(GAME_T* GAME, int docelowe, int gracz) {
     if (gracz == PLAYER_A) {
         GAME->plansza.pole[docelowe].kolor = CLR_PLAYER_A;
         BAR_PLAYER_B.liczba++;
@@ -354,7 +353,7 @@ void capture(struct GAME_T* GAME, int docelowe, int gracz) {
     }
     GAME->plansza.pole[docelowe].liczba = 0;
 }
-int verify_move(struct GAME_T* GAME, int start, int cel, int gracz, int multi) {
+int verify_move(GAME_T* GAME, int start, int cel, int gracz, int multi) {
     WINDOW* win = GAME->controls.window;
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     if (GAME->plansza.pole[start].kolor != kolor) {
@@ -381,7 +380,7 @@ int verify_move(struct GAME_T* GAME, int start, int cel, int gracz, int multi) {
     return 0;
 }
 
-int bar_empty(struct GAME_T* GAME, int gracz) {
+int bar_empty(GAME_T* GAME, int gracz) {
     if (gracz == PLAYER_A) {
         if (BAR_PLAYER_A.liczba == 0) {
             return 1;
@@ -397,18 +396,28 @@ int bar_empty(struct GAME_T* GAME, int gracz) {
 int asc_dice(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
 int desc_dice(const void* a, const void* b) { return (*(int*)b - *(int*)a); }
 
-struct MOVE_T check_A_capture(struct GAME_T* GAME, int kolor, int kostki[4]) {
-    struct MOVE_T move;
+int asc_KOSTKA(const void* a, const void* b) {
+    return (*(KOSTKA_T*)a).value - (*(KOSTKA_T*)b).value;
+}
+
+MOVE_T check_A_capture(GAME_T* GAME, int kolor, int kostki[4]) {
+    MOVE_T move;
+    KOSTKA_T copy[4];
     for (int i = 0; i < 4; i++) {
-        if (kostki[i] < 1) continue;
+        copy[i].value = kostki[i];
+        copy[i].index = i;
+    }
+    qsort(copy, 4, sizeof(KOSTKA_T), asc_KOSTKA);
+    for (int i = 0; i < 4; i++) {
+        if (copy[i].value < 1) continue;
         for (int j = 0; j < POLE_COUNT + 1; j++) {
             if (GAME->plansza.pole[j].kolor == kolor &&
                 GAME->plansza.pole[j].liczba > 0) {
-                int docelowe = j + kostki[i];
+                int docelowe = j + copy[i].value;
                 if (docelowe < 1 || docelowe > 24) continue;
                 if (GAME->plansza.pole[docelowe].kolor != kolor &&
                     GAME->plansza.pole[docelowe].liczba == 1) {
-                    move.kostka = i + 1;
+                    move.kostka = copy[i].index + 1;
                     move.pionek = j;
                     return move;
                 }
@@ -420,8 +429,9 @@ struct MOVE_T check_A_capture(struct GAME_T* GAME, int kolor, int kostki[4]) {
     return move;
 }
 
-struct MOVE_T check_B_capture(struct GAME_T* GAME, int kolor, int kostki[4]) {
-    struct MOVE_T move;
+MOVE_T check_B_capture(GAME_T* GAME, int kolor, int kostki[4]) {
+    MOVE_T move;
+    // qsort(kostki, 4, sizeof(int), asc_dice);
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
         for (int j = POLE_COUNT; j > 0; j--) {
@@ -443,13 +453,11 @@ struct MOVE_T check_B_capture(struct GAME_T* GAME, int kolor, int kostki[4]) {
     return move;
 }
 
-int capture_possible(struct GAME_T* GAME, int gracz) {
+int capture_possible(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
 
     int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
                      GAME->dice[3]};
-
-    qsort(kostki, 4, sizeof(int), asc_dice);
 
     if (gracz == PLAYER_A) {
         if (check_A_capture(GAME, kolor, kostki).kostka != -1) {
@@ -465,16 +473,16 @@ int capture_possible(struct GAME_T* GAME, int gracz) {
     }
 }
 
-int enforce_move(struct MOVE_T forced, struct MOVE_T move, int capture_flag,
-                 int gracz, struct GAME_T* GAME) {
+int enforce_move(MOVE_T forced, MOVE_T move, int capture_flag, int gracz,
+                 GAME_T* GAME) {
     if (capture_flag) {
         if (move.kostka != forced.kostka) {
-            comms(GAME->controls.window, "wrong dice", RED, gracz);
+            comms(GAME->controls.window, "Wrong dice", RED, gracz);
             pause();
             return 1;
         }
         if (move.pionek != forced.pionek) {
-            comms(GAME->controls.window, "wrong field", RED, gracz);
+            comms(GAME->controls.window, "Wrong field", RED, gracz);
             pause();
             return 1;
         }
@@ -482,7 +490,7 @@ int enforce_move(struct MOVE_T forced, struct MOVE_T move, int capture_flag,
     return 0;
 }
 
-int check_A_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
+int check_A_moves(GAME_T* GAME, int kolor, int kostki[4]) {
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
         for (int j = 0; j < POLE_COUNT + 1; j++) {
@@ -501,7 +509,7 @@ int check_A_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
     return 0;
 }
 
-int check_B_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
+int check_B_moves(GAME_T* GAME, int kolor, int kostki[4]) {
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
         for (int j = POLE_COUNT; j > 0; j--) {
@@ -520,7 +528,7 @@ int check_B_moves(struct GAME_T* GAME, int kolor, int kostki[4]) {
     return 0;
 }
 
-int move_possible(struct GAME_T* GAME, int gracz) {
+int move_possible(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
                      GAME->dice[3]};
@@ -531,7 +539,7 @@ int move_possible(struct GAME_T* GAME, int gracz) {
         return check_B_moves(GAME, kolor, kostki);
 }
 
-void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start) {
+void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start) {
     comms(window, "CHOOSE DICES [np.: 2+1+3]", GREEN, gracz);
     W_GETNSTR_IN(7, 2, CONTROLS_PADD);
     int kostki[4] = {0};
@@ -586,7 +594,7 @@ void multi_move(WINDOW* window, struct GAME_T* GAME, int gracz, int start) {
     crud_move_pionek(GAME, start, cel, gracz);
 }
 
-int can_take_home(struct GAME_T* GAME, int gracz) {
+int can_take_home(GAME_T* GAME, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     int start = gracz == PLAYER_A ? 19 : 1;
     int i, suma = 0;
@@ -602,7 +610,7 @@ int can_take_home(struct GAME_T* GAME, int gracz) {
     return 0;
 }
 
-void move_to_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+void move_to_home(GAME_T* GAME, MOVE_T move, int gracz) {
     int* home = gracz == PLAYER_A ? &GAME->plansza.dwor.gracz_A
                                   : &GAME->plansza.dwor.gracz_B;
     int start = move.pionek;
@@ -618,9 +626,9 @@ void move_to_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
 }
 
-int is_better_home_B(struct GAME_T* GAME, struct MOVE_T move, int* kostki,
-                     int home_start, int gracz) {
-    struct MOVE_T optim;
+int is_better_home_B(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
+                     int gracz) {
+    MOVE_T optim;
     int optim_flag = 0;
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
@@ -641,9 +649,9 @@ int is_better_home_B(struct GAME_T* GAME, struct MOVE_T move, int* kostki,
     return 0;
 }
 
-int is_better_home_A(struct GAME_T* GAME, struct MOVE_T move, int* kostki,
-                     int home_start, int gracz) {
-    struct MOVE_T optim;
+int is_better_home_A(GAME_T* GAME, MOVE_T move, int* kostki, int home_start,
+                     int gracz) {
+    MOVE_T optim;
     int optim_flag = 0;
     for (int i = 0; i < 4; i++) {
         if (kostki[i] < 1) continue;
@@ -665,7 +673,7 @@ int is_better_home_A(struct GAME_T* GAME, struct MOVE_T move, int* kostki,
     return 0;
 }
 
-int is_better_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
+int is_better_home(GAME_T* GAME, MOVE_T move, int gracz) {
     int kostki[4] = {GAME->dice[0], GAME->dice[1], GAME->dice[2],
                      GAME->dice[3]};
 
@@ -678,9 +686,9 @@ int is_better_home(struct GAME_T* GAME, struct MOVE_T move, int gracz) {
     }
 }
 
-void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
+void move_action(WINDOW* window, GAME_T* GAME, int gracz) {
     char kostki[50];
-    struct MOVE_T move, forced;
+    MOVE_T move, forced;
     int bar_flag = 0, capture_flag = 0;
     forced.kostka = -1;
     int home_flag = can_take_home(GAME, gracz);
@@ -736,7 +744,8 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
             clearLine(3);
             move.pionek = get_number(window, GAME, gracz);
         }
-        int multi = capture_flag || home_flag ? MULTI_OFF : MULTI_ON;
+        int multi =
+            capture_flag || home_flag || bar_flag ? MULTI_OFF : MULTI_ON;
         comms(window, (multi ? TXT_M_DICE_M : TXT_M_DICE), GREEN, gracz);
         w_mvwprintw(3, 4, TXT_M_DICE_INFO);
         clearLine(3);
@@ -790,7 +799,7 @@ void move_action(WINDOW* window, struct GAME_T* GAME, int gracz) {
     // end komunikat o ruchu
     move_pionek(GAME, move, gracz);
 }
-int check_win(struct GAME_T* GAME) {
+int check_win(GAME_T* GAME) {
     int points = 1;
     if (GAME->plansza.dwor.gracz_A == 15) {
         if (GAME->plansza.dwor.gracz_B == 0) {
@@ -807,7 +816,7 @@ int check_win(struct GAME_T* GAME) {
     }
     return 0;
 }
-int turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
+int turn(WINDOW* window, GAME_T* GAME, int gracz) {
     GAME->turn++;
     comms(window, GAME->komunikat, GREEN, gracz);
     wrefresh(window);
@@ -829,14 +838,14 @@ int turn(WINDOW* window, struct GAME_T* GAME, int gracz) {
         comms(window, "skip", RED, gracz);
     return 0;
 }
-int start_next(struct GAME_T* GAME, int gracz) {
+int start_next(GAME_T* GAME, int gracz) {
     WINDOW* window = GAME->controls.window;
     comms(window, TXT_START_NEXT, GREEN, gracz);
     while (decide_controls(window, GAME) != 'n')
         comms(window, TXT_START_NEXT, ORANGE, gracz);
     return 1;
 }
-void gameplay(struct GAME_T* GAME, int gracz) {
+void gameplay(GAME_T* GAME, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
     int win = 0;
     while (1) {
@@ -859,13 +868,13 @@ void gameplay(struct GAME_T* GAME, int gracz) {
     if (win) exec_win(GAME, win, gracz);
 }
 
-void paint_GAMEVIEW(struct GAME_T* GAME) {
+void paint_GAMEVIEW(GAME_T* GAME) {
     paint_STATE(GAME->aside.window, GAME);
     paint_DICE(GAME->ui_2.window, GAME);
     paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
-void starting_roll(struct GAME_T* GAME, WINDOW* window, int gracz) {
+void starting_roll(GAME_T* GAME, WINDOW* window, int gracz) {
     comms(window, TXT_START_ROLL, GREEN, gracz);
     wrefresh(window);
     while (decide_controls(window, GAME) != 'r') {
@@ -875,7 +884,7 @@ void starting_roll(struct GAME_T* GAME, WINDOW* window, int gracz) {
     paint_DICE(GAME->ui_2.window, GAME);
     wrefresh(window);
 }
-int who_starts(struct GAME_T* GAME) {
+int who_starts(GAME_T* GAME) {
     WINDOW* window = GAME->controls.window;
     starting_roll(GAME, window, PLAYER_A);
     starting_roll(GAME, window, PLAYER_B);
@@ -894,7 +903,7 @@ int who_starts(struct GAME_T* GAME) {
     }
 }
 
-void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
+void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz) {
     int kolor = gracz == PLAYER_A ? CLR_PLAYER_A : CLR_PLAYER_B;
     if (GAME->plansza.pole[cel].kolor != 0 &&
         GAME->plansza.pole[cel].kolor != kolor) {
@@ -909,7 +918,7 @@ void crud_move_pionek(struct GAME_T* GAME, int start, int cel, int gracz) {
     paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
 }
 
-int load_save(struct GAME_T* GAME, FILE* file, int recur, int limit) {
+int load_save(GAME_T* GAME, FILE* file, int recur, int limit) {
     initGame(GAME);
     int lines = 0;
     char buffer[2][3], c;
@@ -951,7 +960,7 @@ int load_save(struct GAME_T* GAME, FILE* file, int recur, int limit) {
     }
     return gracz == PLAYER_A ? PLAYER_B : PLAYER_A;
 }
-void exec_win(struct GAME_T* GAME, int points, int gracz) {
+void exec_win(GAME_T* GAME, int points, int gracz) {
     GAME->gracz_A.wynik += gracz == PLAYER_A ? points : 0;
     GAME->gracz_B.wynik += gracz == PLAYER_B ? points : 0;
     paint_STATE(GAME->aside.window, GAME);
@@ -973,7 +982,7 @@ void exec_win(struct GAME_T* GAME, int points, int gracz) {
     }
 }
 
-int decide_replay(WINDOW* window, struct GAME_T* GAME) {
+int decide_replay(WINDOW* window, GAME_T* GAME) {
     w_mvwprintw(getmaxy(window) / 2, 4, TXT_REPLAY);
     clearLine(getmaxy(window) / 2);
     W_GETNSTR_IN(1, 2, CONTROLS_PADD + 1);
@@ -1010,7 +1019,7 @@ int decide_replay(WINDOW* window, struct GAME_T* GAME) {
     return result;
 }
 
-void replay(struct GAME_T* GAME, FILE* file, int curr, int limit) {
+void replay(GAME_T* GAME, FILE* file, int curr, int limit) {
     curr < 0 ? curr = limit : curr;
     curr > limit ? curr = 0 : curr;
     rewind(file);
@@ -1056,7 +1065,7 @@ int count_lines(FILE* file) {
     rewind(file);
     return lines;
 }
-void run(struct GAME_T* GAME) {
+void run(GAME_T* GAME) {
     int gracz;
     paint_FAME(GAME->aside.window, GAME);
     paint_MENU(GAME->menu.window, GAME);
@@ -1096,7 +1105,7 @@ void run(struct GAME_T* GAME) {
     }
 }
 
-void placePionki(struct GAME_T* GAME) {
+void placePionki(GAME_T* GAME) {
     // struct {
     //     int index, liczba, kolor;
     // } pionki[] = {{1, 2, CLR_PLAYER_A},  {6, 5, CLR_PLAYER_B},
@@ -1106,9 +1115,9 @@ void placePionki(struct GAME_T* GAME) {
     struct {
         int index, liczba, kolor;
     } pionki[] = {
-        // {1, 1, CLR_PLAYER_B},  {2, 1, CLR_PLAYER_B},  {4, 1,CLR_PLAYER_B},
-        // {23, 1, CLR_PLAYER_A},
-        {24, 1, CLR_PLAYER_A},
+        {1, 1, CLR_PLAYER_A},
+        {2, 1, CLR_PLAYER_B},
+        {5, 1, CLR_PLAYER_B},
     };
 
     for (int i = 0; i < sizeof(pionki) / sizeof(pionki[0]); i++) {
@@ -1117,7 +1126,7 @@ void placePionki(struct GAME_T* GAME) {
     }
 }
 
-void initGame(struct GAME_T* GAME) {
+void initGame(GAME_T* GAME) {
     GAME->ended = 0;
     GAME->pozostałe_ruchy = 0;
     GAME->turn = 0;
@@ -1156,7 +1165,7 @@ void initGame(struct GAME_T* GAME) {
 }
 
 int main() {
-    struct GAME_T* GAME = (struct GAME_T*)malloc(sizeof(struct GAME_T));
+    GAME_T* GAME = (GAME_T*)malloc(sizeof(GAME_T));
     if (GAME == NULL) return 1;
     if (initialInit(GAME)) {
         printw(TXT_AUTHOR);

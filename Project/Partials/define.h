@@ -111,40 +111,40 @@
     (gracz == PLAYER_A ? GAME->dice[index] : -GAME->dice[index])
 
 // Struktury
-struct POLE_T {
+typedef struct {
     int liczba;  // 0 - brak, 1-15 - ilość pionków
     int kolor;   // 0 - brak, 1 - gracz A, 2 - gracz B
     int number;  // number of field
-};
-struct DWOR_T {
+} POLE_T;
+typedef struct {
     int gracz_A;  // 0 - brak, 1-15 - ilość pionków
     int gracz_B;  // 0 - brak, 1-15 - ilość pionków
-};
-struct PLANSZA_T {
+} DWOR_T;
+typedef struct {
     WINDOW* window;
-    struct POLE_T pole[POLE_COUNT + 3];  // 0 - bar A, 25 - bar B, 26 - trash
-    struct DWOR_T dwor;
-};
-struct GRACZ_T {
+    POLE_T pole[POLE_COUNT + 3];  // 0 - bar A, 25 - bar B, 26 - trash
+    DWOR_T dwor;
+} PLANSZA_T;
+typedef struct {
     char nazwa[MAX_NAME];
     int wynik;
-};
-struct FAME_T {
-    struct GRACZ_T gracz[MAX_FAME];
-};
-struct UI_T {
+} GRACZ_T;
+typedef struct {
+    GRACZ_T gracz[MAX_FAME];
+} FAME_T;
+typedef struct {
     WINDOW* window;
-};
+} UI_T;
 
-struct GAME_T {
-    struct PLANSZA_T plansza;
-    struct GRACZ_T gracz_A;
-    struct GRACZ_T gracz_B;
-    struct FAME_T fame;
-    struct UI_T aside;
-    struct UI_T controls;
-    struct UI_T ui_2;
-    struct UI_T menu;
+typedef struct {
+    PLANSZA_T plansza;
+    GRACZ_T gracz_A;
+    GRACZ_T gracz_B;
+    FAME_T fame;
+    UI_T aside;
+    UI_T controls;
+    UI_T ui_2;
+    UI_T menu;
     int dice[4];
     char komunikat[MAX_LONG_STR];
     int rand_seed;
@@ -154,9 +154,14 @@ struct GAME_T {
     int home_news;
     int turn;
     int ended;
-};
+} GAME_T;
 
-struct MOVE_T {
+typedef struct {
     int kostka;
     int pionek;
-};
+} MOVE_T;
+
+typedef struct {
+    int index;
+    int value;
+} KOSTKA_T;

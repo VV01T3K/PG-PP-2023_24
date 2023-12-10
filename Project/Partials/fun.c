@@ -16,7 +16,7 @@ void colorInit() {
     init_pair(10, COLOR_ORANGE, COLOR_BLACK);
 }
 
-void initWindows(struct GAME_T* GAME) {
+void initWindows(GAME_T* GAME) {
     GAME->plansza.window =
         newwin(PADDED_BOARD_HEIGHT, PADDED_BOARD_WIDTH, 2, 4);
 

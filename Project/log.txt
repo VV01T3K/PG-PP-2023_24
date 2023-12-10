@@ -1,0 +1,2 @@
+kostka: 2, pionek: 1
+kostka: 2, pionek: 1
