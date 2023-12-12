@@ -1,2 +1,0 @@
-check_A_moves: 0 1 1 0
-check_A_moves: 6 7 1 0

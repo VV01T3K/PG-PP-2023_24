@@ -1,5 +1,0 @@
-Gargamel 4
-Bartłomiej 2
-Wojtek 2
-tester1 1
-Bartek 1
