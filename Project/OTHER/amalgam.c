@@ -1,3 +1,570 @@
+#include <ctype.h>
+#include <locale.h>
+#include <ncurses.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include "define.h"
+#include "text.h"
+// misc.c
+void colorInit();
+char initialInit();
+void initWindows(GAME_T* GAME);
+int asc_fame(const void* a, const void* b);
+int desc_fame(const void* a, const void* b);
+int asc_dice(const void* a, const void* b);
+int desc_dice(const void* a, const void* b);
+int asc_KOSTKA(const void* a, const void* b);
+
+// paint.c
+void paint_MENU(WINDOW* window, GAME_T* GAME);
+void paint_POLE_TOP(int x, int pad, int kolor, WINDOW* window, POLE_T pole);
+void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window, POLE_T pole);
+void paint_BAR_A(int x, int y, WINDOW* window, GAME_T* GAME);
+void paint_BAR_B(int x, int y, WINDOW* window, GAME_T* GAME);
+void paint_BAR(int x, int y, WINDOW* window, GAME_T* GAME);
+void paint_DWOR(int x, int y, WINDOW* window, DWOR_T dwor);
+void paint_BOARD(WINDOW* window, GAME_T* GAME, int pad);
+void paint_GAMEVIEW(GAME_T* GAME);
+void paint_STATE(WINDOW* window, GAME_T* GAME);
+void paint_FAME(WINDOW* window, GAME_T* GAME);
+void paint_CONTROLS(WINDOW* window, GAME_T* GAME, int gracz);
+void printDICE(WINDOW* win, int y, int x, GAME_T* GAME, int index);
+void paint_DICE(WINDOW* window, GAME_T* GAME);
+void paint_NAME(WINDOW* window, GAME_T* GAME);
+
+// index.c
+void crud_move_pionek(GAME_T* GAME, int start, int cel, int gracz);
+void multi_move(WINDOW* window, GAME_T* GAME, int gracz, int start);
+void exec_win(GAME_T* GAME, int points);
+void capture(GAME_T* GAME, int docelowe, int gracz);
+void initGame(GAME_T* GAME);
+void run(GAME_T* GAME);
+
+// Stałe
+#define TRUE 1
+#define FALSE 0
+#define MAX_FAME 9
+#define MAX_NAME 20
+#define MAX_BAR 6
+#define POLE_COUNT 24
+#define MAX_LONG_STR 200
+#define MAX_SHORT_STR 20
+
+#define PLAYER_A 1
+#define PLAYER_B 2
+
+#define MULTI_ON 1
+#define MULTI_OFF 0
+
+#define TRASH_FIELD 26
+
+#define BAR_PLAYER_A GAME->plansza.pole[0]
+#define BAR_PLAYER_B GAME->plansza.pole[25]
+
+#define CLR_PLAYER_A CYAN
+#define CLR_PLAYER_B MAGENTA
+
+#define STARTED 0
+#define PLAYING 1
+#define ENDED 2
+
+#define PIONKI_HEIGHT 5
+#define BOARD_PADDING 2
+#define BOARD_WIDTH 47
+#define PADDED_BOARD_WIDTH (BOARD_WIDTH + (BOARD_PADDING * 3))
+#define PADDED_BOARD_HEIGHT (BOARD_HEIGHT + (BOARD_PADDING * 2))
+
+#define CTRLS_PADD 15 + 2  // strlen("Ruch-Gracza X: ") + x
+#define MENU_PADD 18 + 3   // strlen("Choose from list: ") + x
+
+#define BOARD_HEIGHT 13
+
+// FILE PATHS
+#define FAME_PATH "ARCHIVE/fame.txt"
+#define SAVE_PATH "ARCHIVE/save.txt"
+#define TEMPLATE_PATH "ARCHIVE/template.txt"
+#define TEMP_PATH "ARCHIVE/temp.txt"
+
+// Znaki
+// #define BLOCK "\u25A7"
+#define BLOCK "\u25A0"
+#define PIONEK "\u25CF"
+#define POLE_UP "\u25B3"
+#define POLE_DOWN "\u25BD"
+#define HR "\u2500"
+// #define LINE "\u2507"
+#define LINE "|"
+
+// Kolory
+#define COLOR_DEFAULT 0
+#define BLUE_YELLOW 1
+#define RED 2
+#define YELLOW 3
+#define GREEN 4
+#define BLUE 5
+#define BROWN 6
+#define DARK_BLUE 7
+#define MAGENTA 8
+#define CYAN 9
+#define ORANGE 10
+
+#define COLOR_BROWN 80
+#define COLOR_DARK_BLUE 81
+#define COLOR_ORANGE 82
+
+// Makra
+#define W_GETNSTR_IN(n, y, x) \
+    char in[n + 1];           \
+    wmove(window, y, x);      \
+    wgetnstr(window, in, n);  \
+    wmove(window, y, x);
+
+#define CLR(x) COLOR_PAIR(x)
+
+#define atrrCLR(clr, _print)          \
+    wattron(window, COLOR_PAIR(clr)); \
+    _print;                           \
+    wattroff(window, COLOR_PAIR(clr));
+
+#define watrr(other, _print) \
+    wattron(window, other);  \
+    _print;                  \
+    wattroff(window, other);
+
+#define atrr(other, _print) \
+    attron(other);          \
+    _print;                 \
+    attroff(other);
+
+#define w_mvwprintw(y, x, str) mvwprintw(window, y, x, str);
+
+#define w_wprintw(str) wprintw(window, str);
+
+#define clearLine(y)                          \
+    wclrtoeol(window);                        \
+    w_mvwprintw(y, getmaxx(window) - 1, "│"); \
+    w_mvwprintw(y, 0, "│");                   \
+    wrefresh(window);
+
+#define pause() \
+    noecho();   \
+    getch();    \
+    echo();
+
+#define gracz_step(index) \
+    (gracz == PLAYER_A ? GAME->dice[index] : -GAME->dice[index])
+
+#define LOG(str, ...)                   \
+    FILE* file = fopen("log.txt", "a"); \
+    fprintf(file, str, ##__VA_ARGS__);  \
+    fclose(file);
+
+// Struktury
+typedef struct {
+    int liczba;  // 0 - brak, 1-15 - ilość pionków
+    int kolor;   // 0 - brak, 1 - gracz A, 2 - gracz B
+    int number;  // number of field
+} POLE_T;
+typedef struct {
+    int gracz_A;  // 0 - brak, 1-15 - ilość pionków
+    int gracz_B;  // 0 - brak, 1-15 - ilość pionków
+} DWOR_T;
+typedef struct {
+    WINDOW* window;
+    POLE_T pole[POLE_COUNT + 3];  // 0 - bar A, 25 - bar B, 26 - trash
+    DWOR_T dwor;
+} PLANSZA_T;
+typedef struct {
+    char nazwa[MAX_NAME];
+    int wynik;
+} GRACZ_T;
+typedef struct {
+    GRACZ_T gracz[MAX_FAME];
+} FAME_T;
+typedef struct {
+    WINDOW* window;
+} UI_T;
+
+typedef struct {
+    PLANSZA_T plansza;
+    GRACZ_T gracz_A;
+    GRACZ_T gracz_B;
+    FAME_T fame;
+    UI_T aside;
+    UI_T controls;
+    UI_T ui_2;
+    UI_T menu;
+    int dice[4];
+    char komunikat[MAX_LONG_STR];
+    int rand_seed;
+    int dublet;
+    int leftMoves;
+    char ruchy[MAX_LONG_STR];
+    int home_news;
+    int turn;
+    int ended;
+    int winner;
+    int bar_f;
+} GAME_T;
+
+typedef struct {
+    int kostka;
+    int pionek;
+} MOVE_T;
+
+typedef struct {
+    int index;
+    int value;
+} KOSTKA_T;
+
+typedef struct {
+    int index, liczba, kolor;
+} PIONKI_T;
+
+#define TXT_VER_1 "You have to choose your field!"
+#define TXT_VER_2 "You have to choose field with pieces!"
+#define TXT_VER_3 "You have to choose conquerable field!"
+#define TXT_VER_4 "You can't move to home"
+#define TXT_CAPTURE "Ładne bicie"
+#define TXT_MOVE_IMP "You have to  skip (no legal moves)! [ANY]"
+#define TXT_BAR_FULL "You have to  move all pieces from bar! (ANY)"
+#define TXT_CAP_POS "You have to capture! [ANY]"
+
+#define TXT_M_PION "Choose field with your pieces"
+#define TXT_M_FIELD "Choose number from 1 to 24"
+#define TXT_M_DICE "Choose dice"
+#define TXT_M_DICE_M "Choose dice or [m] for multi dice"
+#define TXT_M_DICE_N "Choose next dice (or 0 to end turn)"
+#define TXT_M_DICE_INFO "Choose number of dice from bottom right panel"
+
+#define TXT_POST_MOVE "Ruszyłeś pionka z pola %d na pole %d"
+#define TXT_POST_MOVE_BAR "Ruszyłeś pionka z bandy na pole %d"
+
+#define TXT_DECIDE_R "You have to roll dice first!"
+#define TXT_DECIDE_M "You can move now"
+#define TXT_DECIDE_S "You can skip now"
+
+#define TXT_START_ROLL "Roll to decide who starts"
+#define TXT_START_PLAYER_A "Player A starts [ANY]"
+#define TXT_START_PLAYER_B "Player B starts [ANY]"
+
+#define TXT_TURN "Good luck!"
+
+#define TXT_AUTHOR "Wojciech Siwiec | Indeks: s197815 | Rok: 2023/24"
+#define TXT_GAME_NAME "Backgammon─1.0"
+
+#define TXT_DICE_ROLL "Throw dice!"
+#define TXT_DICE_USED "Dice already used!"
+
+#define TXT_DICE_NR "Dice Nr %d"
+
+#define TXT_WRONG "Wrong input!"
+
+#define TXT_CLR_UNSUPPORTED "Terminal doesn't support colors!"
+
+#define TXT_CONTROLS "R(oll) | M(ove) | S(kip) | E(xit)"
+
+#define TXT_HOME_POS "You can move to court! [ANY]"
+
+#define TXT_BETTER_HOME "You have to choose optimal move!"
+
+#define TXT_START_NEXT "Enter [n] to start next game or [e] to exit"
+#define TXT_DECIDE_N "You can move now"
+
+#define TXT_CONTROLS "R(oll) | M(ove) | S(kip) | E(xit)"
+#define TXT_REPLAY "N(ext) | P(revious) | (G)oto | (S)tart | E(xit)"
+
+#define TXT_REPLAY_0 "Welcome to replay mode!"
+#define TXT_REPLAY_1 "Current step: %d | Max steps: %d"
+#define TXT_REPLAY_2 "Choose step to go to"
+#define TXT_REPLAY_3 "Going to step: %d"
+
+#define TXT_NAME "Enter your name:"
+
+#define TXT_MUST_MOVE "You have to move!"
+#define TXT_MUST_SKIP "You have to skip!"
+
+#define TXT_M_MOVE "CHOOSE DICES [np.: 2+1+3]"
+#define TXT_M_VER_1 "WRONG DICE NUMBERS"
+#define TXT_M_VER_2 "DICE ALREADY USED"
+#define TXT_M_VER_3 "DICE USED TWICE"
+
+#include "headers.h"
+
+int asc_fame(const void* a, const void* b) {
+    return ((GRACZ_T*)a)->wynik - ((GRACZ_T*)b)->wynik;
+}
+int desc_fame(const void* a, const void* b) {
+    return ((GRACZ_T*)b)->wynik - ((GRACZ_T*)a)->wynik;
+}
+int asc_dice(const void* a, const void* b) { return (*(int*)a - *(int*)b); }
+int desc_dice(const void* a, const void* b) { return (*(int*)b - *(int*)a); }
+
+int asc_KOSTKA(const void* a, const void* b) {
+    return (*(KOSTKA_T*)a).value - (*(KOSTKA_T*)b).value;
+}
+
+void colorInit() {
+    init_pair(1, COLOR_BLUE, COLOR_YELLOW);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
+    init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(4, COLOR_GREEN, COLOR_BLACK);
+    init_pair(5, COLOR_BLUE, COLOR_BLACK);
+    init_color(COLOR_BROWN, 500, 250, 0);
+    init_color(COLOR_DARK_BLUE, 0, 0, 500);
+    init_pair(6, COLOR_BROWN, COLOR_BLACK);
+    init_pair(7, COLOR_DARK_BLUE, COLOR_BLACK);
+    init_pair(8, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(9, COLOR_CYAN, COLOR_BLACK);
+    init_color(COLOR_ORANGE, 1000, 500, 0);
+    init_pair(10, COLOR_ORANGE, COLOR_BLACK);
+}
+
+void initWindows(GAME_T* GAME) {
+    GAME->plansza.window =
+        newwin(PADDED_BOARD_HEIGHT, PADDED_BOARD_WIDTH, 2, 4);
+
+    GAME->controls.window =
+        newwin(PADDED_BOARD_HEIGHT / 3 + 1, PADDED_BOARD_WIDTH,
+               PADDED_BOARD_HEIGHT + 1, 4);
+
+    GAME->ui_2.window =
+        newwin(PADDED_BOARD_HEIGHT / 3 + 1, PADDED_BOARD_WIDTH / 2,
+               PADDED_BOARD_HEIGHT + 1, PADDED_BOARD_WIDTH + 4);
+
+    GAME->menu.window = newwin(PADDED_BOARD_HEIGHT + PADDED_BOARD_HEIGHT / 3,
+                               PADDED_BOARD_WIDTH, 2, 4);
+
+    GAME->aside.window =
+        newwin(PADDED_BOARD_HEIGHT + PADDED_BOARD_HEIGHT / 3,
+               PADDED_BOARD_WIDTH / 2, 2, PADDED_BOARD_WIDTH + 4);
+
+    refresh();
+}
+
+char initialInit() {
+    setlocale(LC_ALL, "");
+    initscr();
+    if (has_colors() == TRUE) {
+        start_color();
+        colorInit();
+    } else {
+        printw(TXT_CLR_UNSUPPORTED);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+#include "headers.h"
+void paint_MENU(WINDOW* window, GAME_T* GAME) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(0, 1, "Menu"););
+
+    watrr(A_BOLD, w_mvwprintw(2, getmaxy(window) / 1.2, TXT_GAME_NAME););
+
+    w_mvwprintw(4, 3, "Choose from list: ");
+    w_mvwprintw(5, 3, "( Enter x2 to confirm :v )");
+
+    w_mvwprintw(8, 4, "1) New Game");
+    w_mvwprintw(9, 4, "2) Load Game");
+    w_mvwprintw(10, 4, "3) Replay");
+    w_mvwprintw(11, 4, "4) Exit");
+
+    wrefresh(window);
+}
+void paint_NAME(WINDOW* window, GAME_T* GAME) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(1, 1, TXT_NAME););
+    wrefresh(window);
+}
+
+void paint_BOARD(WINDOW* window, GAME_T* GAME, int pad) {
+    box(window, 0, 0);
+    int i, mv;
+    for (i = 0, mv = 0; i < BOARD_HEIGHT - 1; i++) {
+        if (i == 6) {
+            paint_BAR((3 * i) + (pad * 2), pad, window, GAME);
+            mv += 5;
+        }
+        paint_POLE_TOP(3 * i + mv, pad, (i % 2 ? YELLOW : RED), window,
+                       GAME->plansza.pole[12 - i]);
+        paint_POLE_BOT(3 * i + mv, pad, (i % 2 ? RED : YELLOW), window,
+                       GAME->plansza.pole[13 + i]);
+    }
+    paint_DWOR(3 * i + (pad * 2) + mv, pad, window, GAME->plansza.dwor);
+
+    watrr(A_BOLD, mvwprintw(window, 0, 1, TXT_GAME_NAME));
+    wrefresh(window);
+}
+
+void paint_POLE_TOP(int x, int pad, int kolor, WINDOW* window, POLE_T pole) {
+    int i, y = 0 + pad, tmp = pole.liczba;
+    x += pad * 2;
+    mvwprintw(window, y - 1, x - (pole.number > 9 ? 1 : 0), "%d", pole.number);
+    for (i = 0; i < PIONKI_HEIGHT; i++) {
+        if (tmp-- > 0) {
+            atrrCLR(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
+        } else {
+            atrrCLR(kolor, mvwprintw(window, y + i, x, "%s", POLE_DOWN));
+        }
+    }
+    if (tmp > 0)
+        mvwprintw(window, y + i, x - 1, "+%d", tmp);
+    else
+        mvwprintw(window, y + i, x - 1, "  ");
+}
+void paint_POLE_BOT(int x, int pad, int kolor, WINDOW* window, POLE_T pole) {
+    int i, y = 8 + pad, tmp = pole.liczba;
+    x += pad * 2;
+    mvwprintw(window, y + PIONKI_HEIGHT, x - 1, "%d", pole.number);
+    for (i = 4; i >= 0; i--) {
+        if (tmp-- > 0) {
+            atrrCLR(pole.kolor, mvwprintw(window, y + i, x, "%s", PIONEK));
+        } else {
+            atrrCLR(kolor, mvwprintw(window, y + i, x, "%s", POLE_UP));
+        }
+    }
+    if (tmp > 0)
+        mvwprintw(window, y - 1, x - 1, "+%d", tmp);
+    else
+        mvwprintw(window, y - 1, x - 1, "  ");
+}
+void paint_BAR_A(int x, int y, WINDOW* window, GAME_T* GAME) {
+    int i, tmp_A = BAR_PLAYER_A.liczba;
+    for (i = 0; i < BAR_PLAYER_A.liczba; i++) {
+        if (i >= MAX_BAR) {
+            mvwprintw(window, y + PIONKI_HEIGHT - i, x, "+%d",
+                      BAR_PLAYER_A.liczba - i);
+            break;
+        }
+        atrrCLR(CLR_PLAYER_A,
+                mvwprintw(window, y + PIONKI_HEIGHT - i, x + 1, "%s", PIONEK));
+    }
+}
+void paint_BAR_B(int x, int y, WINDOW* window, GAME_T* GAME) {
+    int i, tmp_A = BAR_PLAYER_B.liczba;
+    for (i = 0; i < BAR_PLAYER_B.liczba; i++) {
+        if (i >= MAX_BAR) {
+            mvwprintw(window, y + BOARD_HEIGHT - PIONKI_HEIGHT - 1 + i, x,
+                      "+%d", BAR_PLAYER_B.liczba - i);
+            break;
+        }
+        atrrCLR(CLR_PLAYER_B,
+                mvwprintw(window, y + BOARD_HEIGHT - PIONKI_HEIGHT - 1 + i,
+                          x + 1, "%s", PIONEK));
+    }
+}
+void paint_BAR(int x, int y, WINDOW* window, GAME_T* GAME) {
+    for (int i = 0; i < BOARD_HEIGHT; i++) {
+        mvwprintw(window, y + i, x, "%s %s", LINE, LINE);
+    }
+    paint_BAR_A(x, y, window, GAME);
+    paint_BAR_B(x, y, window, GAME);
+}
+
+void paint_DWOR(int x, int y, WINDOW* window, DWOR_T dwor) {
+    int i, j, tmp;
+    for (i = 0; i < BOARD_HEIGHT; i++) {
+        mvwprintw(window, y + i, x, "%s   %s", LINE, LINE);
+    }
+    for (i = 0, j = 0; i < dwor.gracz_B; i++, i % 3 == 0 ? j++ : j) {
+        atrrCLR(CLR_PLAYER_B,
+                mvwprintw(window, y + j, x + i % 3 + 1, "%s", PIONEK));
+    }
+    for (i = 0, j = 0; i < dwor.gracz_A; i++, i % 3 == 0 ? j++ : j) {
+        atrrCLR(CLR_PLAYER_A, mvwprintw(window, y + BOARD_HEIGHT - j - 1,
+                                        x + i % 3 + 1, "%s", PIONEK));
+    }
+}
+void paint_CONTROLS(WINDOW* window, GAME_T* GAME, int gracz) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Controls"););
+
+    wrefresh(window);
+}
+
+void printDICE(WINDOW* win, int y, int x, GAME_T* GAME, int index) {
+    if (GAME->dice[index] == 0) {
+        mvwprintw(win, y, x, "%d-|#|", index + 1);
+    } else if (GAME->dice[index] != -1) {
+        mvwprintw(win, y, x, "%d-|%d|", index + 1, GAME->dice[index]);
+    }
+}
+void paint_DICE(WINDOW* window, GAME_T* GAME) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(getmaxy(window) - 1, 1, "Dices"););
+
+    if (GAME->dice[0] == -1) {
+        w_mvwprintw(2, 6, TXT_DICE_ROLL);
+        wrefresh(window);
+        return;
+    }
+
+    printDICE(window, 2, 6, GAME, 0);
+    printDICE(window, 2, 16, GAME, 1);
+    printDICE(window, 3, 6, GAME, 2);
+    printDICE(window, 3, 16, GAME, 3);
+
+    if (GAME->dublet) {
+        w_mvwprintw(4, 6, "Dublet!");
+    }
+
+    wrefresh(window);
+}
+void paint_FAME(WINDOW* window, GAME_T* GAME) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(1, 7, "Hall of Fame"););
+    FILE* file = fopen(FAME_PATH, "r");
+    char buffer[MAX_NAME];
+    for (int i = 0; i < MAX_FAME; i++) {
+        fscanf(file, "%s %d", buffer, &GAME->fame.gracz[i].wynik);
+        if (buffer[0] == '\0') break;
+        strcpy(GAME->fame.gracz[i].nazwa, buffer);
+        buffer[0] = '\0';
+        mvwprintw(window, i + 3, 2, "%d) %s %d", i + 1,
+                  GAME->fame.gracz[i].nazwa, GAME->fame.gracz[i].wynik);
+    }
+    fclose(file);
+
+    wrefresh(window);
+}
+void paint_STATE(WINDOW* window, GAME_T* GAME) {
+    wclear(window);
+    box(window, 0, 0);
+    watrr(A_BOLD, w_mvwprintw(0, 1, "State"););
+
+    watrr(A_BOLD, w_mvwprintw(2, 10, "SCORE"););
+    mvwprintw(window, 3, 6, "A: %d  |  B: %d", GAME->gracz_A.wynik,
+              GAME->gracz_B.wynik);
+    wmove(window, 4, 4);
+    for (int i = 0; i < 18; i++) w_wprintw(HR);
+
+    watrr(A_BOLD, w_mvwprintw(5, 7, "TURN:"););
+    mvwprintw(window, 5, 13, "Nr %d", GAME->turn);
+
+    watrr(A_BOLD, w_mvwprintw(6, 5, "MOVES LEFT:"););
+    mvwprintw(window, 6, 18, "%d", GAME->leftMoves);
+
+    wmove(window, 7, 4);
+    for (int i = 0; i < 18; i++) w_wprintw(HR);
+    wrefresh(window);
+    paint_DICE(GAME->ui_2.window, GAME);
+}
+void paint_GAMEVIEW(GAME_T* GAME) {
+    paint_STATE(GAME->aside.window, GAME);
+    paint_DICE(GAME->ui_2.window, GAME);
+    paint_CONTROLS(GAME->controls.window, GAME, PLAYER_A);
+    paint_BOARD(GAME->plansza.window, GAME, BOARD_PADDING);
+}
+
 #include "Partials/headers.h"
 void clear_save() {
     FILE* file = fopen(SAVE_PATH, "w");
@@ -56,8 +623,8 @@ int roll(GAME_T* GAME) {
     GAME->dublet = FALSE;
     GAME->dice[0] = rand() % 6 + 1;
     GAME->dice[1] = rand() % 6 + 1;
-    GAME->dice[0] = 5;
-    GAME->dice[1] = 3;
+    // GAME->dice[0] = 1;
+    // GAME->dice[1] = 1;
 
     if (GAME->dice[0] == GAME->dice[1]) {
         GAME->dice[2] = GAME->dice[0];

@@ -1,5 +1,6 @@
 Gargamel 4
-Bartłomiej 2
+test 2
 Wojtek 2
-tester1 1
+Bartłomiej 2
 Bartek 1
+tester1 1
